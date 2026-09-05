@@ -1,0 +1,8 @@
+{
+  "name": "Warehouse Inventory Management",
+  "description": "Sistem manajemen inventaris gudang profesional dengan Supabase",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
