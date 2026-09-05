@@ -258,24 +258,51 @@ export default function Dashboard() {
 
       {/* Main Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="col-span-1 lg:col-span-2 !p-5 border-slate-200 shadow-sm">
-          <h3 className="text-base font-bold text-slate-900 mb-4">In Stock vs Out Stock</h3>
-          <div className="h-72">
-            {inOutChartData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={inOutChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                  <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} dy={10} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} />
-                  <RechartsTooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                  <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
-                  <Bar dataKey="In" fill="#3b82f6" radius={[4, 4, 0, 0]} maxBarSize={40} />
-                  <Bar dataKey="Out" fill="#f59e0b" radius={[4, 4, 0, 0]} maxBarSize={40} />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="h-full flex items-center justify-center text-slate-400 text-sm">Tidak ada data di periode ini</div>
-            )}
+        <Card className="col-span-1 lg:col-span-2 !p-0 border-slate-200 shadow-sm overflow-hidden flex flex-col h-96">
+          <div className="p-4 border-b border-red-100 bg-red-50/30 shrink-0">
+            <h3 className="text-base font-bold text-red-900 flex items-center">
+              <AlertTriangle className="w-4 h-4 mr-2 text-red-600" /> Peringatan Stok
+            </h3>
+          </div>
+          <div className="p-0 overflow-y-auto flex-1">
+             <table className="w-full text-left text-sm whitespace-nowrap">
+                <thead className="bg-slate-50 text-[10px] uppercase text-slate-500 font-bold sticky top-0">
+                  <tr>
+                    <th className="px-4 py-3 border-b border-slate-100">Produk</th>
+                    <th className="px-4 py-3 border-b border-slate-100 text-right">Stok</th>
+                    <th className="px-4 py-3 border-b border-slate-100 text-right">Min</th>
+                    <th className="px-4 py-3 border-b border-slate-100">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {lowStockProducts.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="px-4 py-8 text-center text-slate-500">
+                        Semua stok produk dalam kondisi aman.
+                      </td>
+                    </tr>
+                  ) : (
+                    lowStockProducts.map(p => (
+                      <tr 
+                        key={p.id} 
+                        className="hover:bg-slate-50 cursor-pointer"
+                        onClick={() => navigate('/inventory')}
+                      >
+                        <td className="px-4 py-3 font-medium text-slate-900">{p.product_code}<br/><span className="text-slate-500 font-normal text-xs">{p.product_name}</span></td>
+                        <td className="px-4 py-3 text-right font-bold text-slate-900">{p.gudangStock}</td>
+                        <td className="px-4 py-3 text-right text-slate-500">{p.minimum_stock}</td>
+                        <td className="px-4 py-3">
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            p.status === 'HABIS' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'
+                          }`}>
+                            {p.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+             </table>
           </div>
         </Card>
 
@@ -352,51 +379,24 @@ export default function Dashboard() {
 
       {/* Activity & Low Stock Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="!p-0 border-slate-200 shadow-sm overflow-hidden flex flex-col h-96">
-          <div className="p-4 border-b border-red-100 bg-red-50/30">
-            <h3 className="text-base font-bold text-red-900 flex items-center">
-              <AlertTriangle className="w-4 h-4 mr-2 text-red-600" /> Peringatan Stok
-            </h3>
-          </div>
-          <div className="p-0 overflow-y-auto flex-1">
-             <table className="w-full text-left text-sm whitespace-nowrap">
-                <thead className="bg-slate-50 text-[10px] uppercase text-slate-500 font-bold sticky top-0">
-                  <tr>
-                    <th className="px-4 py-3 border-b border-slate-100">Produk</th>
-                    <th className="px-4 py-3 border-b border-slate-100 text-right">Stok</th>
-                    <th className="px-4 py-3 border-b border-slate-100 text-right">Min</th>
-                    <th className="px-4 py-3 border-b border-slate-100">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50">
-                  {lowStockProducts.length === 0 ? (
-                    <tr>
-                      <td colSpan={4} className="px-4 py-8 text-center text-slate-500">
-                        Semua stok produk dalam kondisi aman.
-                      </td>
-                    </tr>
-                  ) : (
-                    lowStockProducts.map(p => (
-                      <tr 
-                        key={p.id} 
-                        className="hover:bg-slate-50 cursor-pointer"
-                        onClick={() => navigate('/inventory')}
-                      >
-                        <td className="px-4 py-3 font-medium text-slate-900">{p.product_code}<br/><span className="text-slate-500 font-normal text-xs">{p.product_name}</span></td>
-                        <td className="px-4 py-3 text-right font-bold text-slate-900">{p.gudangStock}</td>
-                        <td className="px-4 py-3 text-right text-slate-500">{p.minimum_stock}</td>
-                        <td className="px-4 py-3">
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                            p.status === 'HABIS' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'
-                          }`}>
-                            {p.status}
-                          </span>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-             </table>
+        <Card className="!p-5 border-slate-200 shadow-sm flex flex-col h-96">
+          <h3 className="text-base font-bold text-slate-900 mb-4 shrink-0">In Stock vs Out Stock</h3>
+          <div className="flex-1 min-h-0">
+            {inOutChartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={inOutChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                  <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} />
+                  <RechartsTooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                  <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
+                  <Bar dataKey="In" fill="#3b82f6" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                  <Bar dataKey="Out" fill="#f59e0b" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center text-slate-400 text-sm">Tidak ada data di periode ini</div>
+            )}
           </div>
         </Card>
 
