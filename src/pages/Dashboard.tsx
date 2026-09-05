@@ -353,48 +353,6 @@ export default function Dashboard() {
       {/* Activity & Low Stock Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="!p-0 border-slate-200 shadow-sm overflow-hidden flex flex-col h-96">
-          <div className="p-4 border-b border-slate-100 bg-slate-50/50">
-            <h3 className="text-base font-bold text-slate-900">Aktivitas Terakhir</h3>
-          </div>
-          <div className="p-0 overflow-y-auto flex-1">
-            <div className="divide-y divide-slate-100">
-              {recentActivity.length === 0 ? (
-                <div className="p-8 text-center text-slate-500 text-sm">Belum ada aktivitas transaksi</div>
-              ) : (
-                recentActivity.map((act) => (
-                  <div key={act.id} className="p-4 hover:bg-slate-50/50 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-                        act.type === 'IN' ? 'bg-blue-100 text-blue-600' :
-                        act.type === 'OUT' ? 'bg-orange-100 text-orange-600' :
-                        act.type === 'TRANSFER' ? 'bg-purple-100 text-purple-600' :
-                        'bg-teal-100 text-teal-600'
-                      }`}>
-                        {act.type === 'IN' ? <ArrowDownCircle className="w-4 h-4" /> :
-                         act.type === 'OUT' ? <ArrowUpCircle className="w-4 h-4" /> :
-                         <RefreshCw className="w-4 h-4" />}
-                      </div>
-                      <div>
-                        <div className="text-sm font-medium text-slate-900 line-clamp-1">{act.product}</div>
-                        <div className="text-xs text-slate-500 mt-0.5">{act.ref} • {format(new Date(act.date), 'dd MMM yyyy, HH:mm')}</div>
-                      </div>
-                    </div>
-                    <div className="text-right pl-3">
-                      <div className="text-sm font-bold text-slate-900">
-                        {act.type === 'OUT' ? '-' : '+'}{act.qty}
-                      </div>
-                      <span className={`inline-block mt-1 px-1.5 py-0.5 rounded text-[10px] font-bold ${act.badgeColor}`}>
-                        {act.type}
-                      </span>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </Card>
-
-        <Card className="!p-0 border-slate-200 shadow-sm overflow-hidden flex flex-col h-96">
           <div className="p-4 border-b border-red-100 bg-red-50/30">
             <h3 className="text-base font-bold text-red-900 flex items-center">
               <AlertTriangle className="w-4 h-4 mr-2 text-red-600" /> Peringatan Stok
@@ -439,6 +397,48 @@ export default function Dashboard() {
                   )}
                 </tbody>
              </table>
+          </div>
+        </Card>
+
+        <Card className="!p-0 border-slate-200 shadow-sm overflow-hidden flex flex-col h-96">
+          <div className="p-4 border-b border-slate-100 bg-slate-50/50">
+            <h3 className="text-base font-bold text-slate-900">Aktivitas Terakhir</h3>
+          </div>
+          <div className="p-0 overflow-y-auto flex-1">
+            <div className="divide-y divide-slate-100">
+              {recentActivity.length === 0 ? (
+                <div className="p-8 text-center text-slate-500 text-sm">Belum ada aktivitas transaksi</div>
+              ) : (
+                recentActivity.map((act) => (
+                  <div key={act.id} className="p-4 hover:bg-slate-50/50 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+                        act.type === 'IN' ? 'bg-blue-100 text-blue-600' :
+                        act.type === 'OUT' ? 'bg-orange-100 text-orange-600' :
+                        act.type === 'TRANSFER' ? 'bg-purple-100 text-purple-600' :
+                        'bg-teal-100 text-teal-600'
+                      }`}>
+                        {act.type === 'IN' ? <ArrowDownCircle className="w-4 h-4" /> :
+                         act.type === 'OUT' ? <ArrowUpCircle className="w-4 h-4" /> :
+                         <RefreshCw className="w-4 h-4" />}
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium text-slate-900 line-clamp-1">{act.product}</div>
+                        <div className="text-xs text-slate-500 mt-0.5">{act.ref} • {format(new Date(act.date), 'dd MMM yyyy, HH:mm')}</div>
+                      </div>
+                    </div>
+                    <div className="text-right pl-3">
+                      <div className="text-sm font-bold text-slate-900">
+                        {act.type === 'OUT' ? '-' : '+'}{act.qty}
+                      </div>
+                      <span className={`inline-block mt-1 px-1.5 py-0.5 rounded text-[10px] font-bold ${act.badgeColor}`}>
+                        {act.type}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </Card>
       </div>
