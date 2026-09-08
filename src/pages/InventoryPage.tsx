@@ -14,6 +14,12 @@ export default function InventoryPage({ type = 'stock' }: { type?: 'stock' | 'wa
   const [categoryFilter, setCategoryFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
 
+  useEffect(() => {
+    setSearch('');
+    setCategoryFilter('');
+    setStatusFilter('');
+  }, [type]);
+
   // Details Modal
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
@@ -49,10 +55,10 @@ export default function InventoryPage({ type = 'stock' }: { type?: 'stock' | 'wa
 
     // Calculate per product
     const calculated = products.map(product => {
-      const filteredStockIn = stockIn.filter(s => s.product_id === product.id && (s.reason?.name || '').toLowerCase().includes(type.toLowerCase()));
+      const filteredStockIn = stockIn.filter(s => s.product_id === product.id && (s.reason?.name || '').toLowerCase() === type.toLowerCase());
       const totalIn = filteredStockIn.reduce((sum, s) => sum + (s.quantity || 0), 0);
       
-      const outFromGudang = stockOut.filter(s => s.product_id === product.id && !s.source_out_stock_id && (s.stock_in?.reason?.name || '').toLowerCase().includes(type.toLowerCase()));
+      const outFromGudang = stockOut.filter(s => s.product_id === product.id && !s.source_out_stock_id && (s.stock_in?.reason?.name || '').toLowerCase() === type.toLowerCase());
       const totalOutGudang = outFromGudang.reduce((sum, s) => sum + (s.quantity || 0), 0);
       
       const outToVendor = stockOut.filter(s => s.product_id === product.id && s.vendor_id).reduce((sum, s) => sum + (s.quantity || 0), 0);
@@ -131,7 +137,7 @@ export default function InventoryPage({ type = 'stock' }: { type?: 'stock' | 'wa
       const moves: any[] = [];
       
       (inRes.data || []).forEach(item => {
-        if (!(item.reason?.name || '').toLowerCase().includes(type.toLowerCase())) return;
+        if ((item.reason?.name || '').toLowerCase() !== type.toLowerCase()) return;
         moves.push({
           id: item.id,
           date: item.transaction_date || item.created_at,
@@ -145,7 +151,7 @@ export default function InventoryPage({ type = 'stock' }: { type?: 'stock' | 'wa
       });
 
       (outRes.data || []).forEach(item => {
-        if (!item.source_out_stock_id && !(item.stock_in?.reason?.name || '').toLowerCase().includes(type.toLowerCase())) return;
+        if (!item.source_out_stock_id && (item.stock_in?.reason?.name || '').toLowerCase() !== type.toLowerCase()) return;
         
         if (item.vendor_id && !item.source_out_stock_id) {
           moves.push({
