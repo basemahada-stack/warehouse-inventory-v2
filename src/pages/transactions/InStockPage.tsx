@@ -109,7 +109,8 @@ export default function InStockPage() {
         reason_id: item.reason_id,
         pic_id: item.pic_id,
         total_cost: item.total_cost || 0,
-        notes: item.notes
+        notes: item.notes,
+        deadstock_status: item.deadstock_status
       });
     } else {
       setEditingId(null);
@@ -184,7 +185,8 @@ export default function InStockPage() {
         pic_id: formData.pic_id,
         total_cost: formData.total_cost || 0,
         unit_cost: (formData.total_cost || 0) / (formData.quantity || 1),
-        notes: formData.notes
+        notes: formData.notes,
+        deadstock_status: formData.deadstock_status || null
       };
 
       if (editingId) {
@@ -284,14 +286,15 @@ export default function InStockPage() {
                 <th className="px-4 py-2 text-xs border-b border-slate-100">Status IN</th>
                 <th className="px-4 py-2 text-xs border-b border-slate-100">PIC</th>
                 <th className="px-4 py-2 text-xs border-b border-slate-100">Ket. Sales</th>
+                <th className="px-4 py-2 text-xs border-b border-slate-100">Status Deadstock</th>
                 <th className="px-4 py-2 text-xs border-b border-slate-100 text-center">Action</th>
               </tr>
             </thead>
             <tbody className="text-xs text-slate-600">
               {loading ? (
-                <tr><td colSpan={13} className="px-4 py-8 text-center"><Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />Memuat...</td></tr>
+                <tr><td colSpan={14} className="px-4 py-8 text-center"><Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />Memuat...</td></tr>
               ) : data.length === 0 ? (
-                <tr><td colSpan={13} className="px-4 py-8 text-center text-gray-500">Tidak ada data</td></tr>
+                <tr><td colSpan={14} className="px-4 py-8 text-center text-gray-500">Tidak ada data</td></tr>
               ) : (
                 data.map((item, index) => (
                   <tr key={item.id} className="hover:bg-slate-50 border-b border-slate-100">
@@ -307,6 +310,7 @@ export default function InStockPage() {
                     <td className="px-4 py-3">{item.reason?.name || '-'}</td>
                     <td className="px-4 py-3">{item.pic?.name || '-'}</td>
                     <td className="px-4 py-3">{(item.reason?.name || '').toLowerCase().includes('deadstock') ? (item.notes || '-') : '-'}</td>
+                    <td className="px-4 py-3">{(item.reason?.name || '').toLowerCase().includes('deadstock') ? (item.deadstock_status || '-') : '-'}</td>
                     <td className="px-4 py-3 text-center">
                       <div className="flex items-center justify-center gap-2">
                         <button onClick={() => handleView(item)} className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors" title="View Detail">
@@ -375,7 +379,14 @@ export default function InStockPage() {
           </Select>
 
           {reasons.find(r => r.id === formData.reason_id)?.name?.toLowerCase().includes('deadstock') && (
-            <Input label="Ket. Sales" value={formData.notes || ''} onChange={e => setFormData({ ...formData, notes: e.target.value })} placeholder="Keterangan tambahan..." />
+            <>
+              <Select label="Status Deadstock" value={formData.deadstock_status || ''} onChange={e => setFormData({ ...formData, deadstock_status: e.target.value })}>
+                <option value="">Pilih Status</option>
+                <option value="Polosan">Polosan</option>
+                <option value="Logo">Logo</option>
+              </Select>
+              <Input label="Ket. Sales" value={formData.notes || ''} onChange={e => setFormData({ ...formData, notes: e.target.value })} placeholder="Keterangan tambahan..." />
+            </>
           )}
 
           <div className="flex justify-end gap-3 mt-6">
@@ -426,10 +437,16 @@ export default function InStockPage() {
               <span className="col-span-2">{viewData.pic?.name || '-'}</span>
             </div>
             {(viewData.reason?.name || '').toLowerCase().includes('deadstock') && (
-              <div className="grid grid-cols-3 gap-2 border-b border-slate-100 pb-2">
-                <span className="text-slate-500">Ket. Sales</span>
-                <span className="col-span-2">{viewData.notes || '-'}</span>
-              </div>
+              <>
+                <div className="grid grid-cols-3 gap-2 border-b border-slate-100 pb-2">
+                  <span className="text-slate-500">Status Deadstock</span>
+                  <span className="col-span-2">{viewData.deadstock_status || '-'}</span>
+                </div>
+                <div className="grid grid-cols-3 gap-2 border-b border-slate-100 pb-2">
+                  <span className="text-slate-500">Ket. Sales</span>
+                  <span className="col-span-2">{viewData.notes || '-'}</span>
+                </div>
+              </>
             )}
             <div className="grid grid-cols-3 gap-2">
               <span className="text-slate-500">Dibuat Pada</span>

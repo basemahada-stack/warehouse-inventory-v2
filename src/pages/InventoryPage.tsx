@@ -125,7 +125,7 @@ export default function InventoryPage({ type = 'stock' }: { type?: 'stock' | 'wa
     try {
       const [inRes, outRes] = await Promise.all([
         supabase.from('stock_in').select('*, pic:pics(name), reason:in_stock_reasons(name)').eq('product_id', productId),
-        supabase.from('stock_out').select('*, pic:pics(name), vendor:vendors(name), stock_in:stock_in(reason:in_stock_reasons(name))').eq('product_id', productId)
+        supabase.from('stock_out').select('*, pic:pics(name), vendor:vendors(name), stock_in:stock_in(deadstock_status, reason:in_stock_reasons(name))').eq('product_id', productId)
       ]);
 
       const moves: any[] = [];
@@ -139,7 +139,8 @@ export default function InventoryPage({ type = 'stock' }: { type?: 'stock' | 'wa
           reference: item.transaction_number,
           qty: item.quantity,
           location: 'Gudang',
-          pic: item.pic?.name || '-'
+          pic: item.pic?.name || '-',
+          deadstockStatus: item.deadstock_status || '-'
         });
       });
 
@@ -154,7 +155,8 @@ export default function InventoryPage({ type = 'stock' }: { type?: 'stock' | 'wa
             reference: item.transaction_number,
             qty: -item.quantity,
             location: item.vendor?.name || 'Vendor',
-            pic: item.pic?.name || '-'
+            pic: item.pic?.name || '-',
+            deadstockStatus: item.stock_in?.deadstock_status || '-'
           });
         } else if (item.source_out_stock_id) {
            moves.push({
@@ -164,7 +166,8 @@ export default function InventoryPage({ type = 'stock' }: { type?: 'stock' | 'wa
             reference: item.transaction_number,
             qty: -item.quantity,
             location: item.destination || 'External',
-            pic: item.pic?.name || '-'
+            pic: item.pic?.name || '-',
+            deadstockStatus: item.stock_in?.deadstock_status || '-'
           });
         } else {
           moves.push({
@@ -174,7 +177,8 @@ export default function InventoryPage({ type = 'stock' }: { type?: 'stock' | 'wa
             reference: item.transaction_number,
             qty: -item.quantity,
             location: item.destination || 'Gudang',
-            pic: item.pic?.name || '-'
+            pic: item.pic?.name || '-',
+            deadstockStatus: item.stock_in?.deadstock_status || '-'
           });
         }
       });
@@ -458,6 +462,7 @@ export default function InventoryPage({ type = 'stock' }: { type?: 'stock' | 'wa
                           <th className="px-4 py-2 border-b border-slate-200 text-right">Qty</th>
                           <th className="px-4 py-2 border-b border-slate-200">Lokasi</th>
                           <th className="px-4 py-2 border-b border-slate-200">PIC</th>
+                          {type === 'deadstock' && <th className="px-4 py-2 border-b border-slate-200">Status Deadstock</th>}
                         </tr>
                       </thead>
                       <tbody className="text-xs text-slate-600">
@@ -480,6 +485,7 @@ export default function InventoryPage({ type = 'stock' }: { type?: 'stock' | 'wa
                               </td>
                               <td className="px-4 py-3 truncate max-w-[120px]">{m.location}</td>
                               <td className="px-4 py-3">{m.pic}</td>
+                              {type === 'deadstock' && <td className="px-4 py-3">{m.deadstockStatus || '-'}</td>}
                             </tr>
                           ))
                         )}

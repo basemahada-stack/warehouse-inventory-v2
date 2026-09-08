@@ -81,6 +81,7 @@ CREATE TABLE stock_in (
     total_cost NUMERIC(15, 2) DEFAULT 0,
     unit_cost NUMERIC(15, 2) DEFAULT 0,
     notes TEXT,
+    deadstock_status VARCHAR(50),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
