@@ -43,7 +43,7 @@ export default function InventoryPage({ type = 'stock' }: { type?: 'stock' | 'wa
     const [productsRes, inRes, outRes, catRes] = await Promise.all([
       supabase.from('products').select('*, category:categories(id, name), unit:units(id, name)'),
       supabase.from(type === 'deadstock' ? 'deadstock_in' : 'stock_in').select(
-        type === 'deadstock' ? 'id, product_id, quantity, total_cost, unit_cost' : 'id, product_id, quantity, total_cost, unit_cost, reason:in_stock_reasons(name)'
+        type === 'deadstock' ? 'id, product_id, quantity, total_cost, unit_cost, notes' : 'id, product_id, quantity, total_cost, unit_cost, reason:in_stock_reasons(name)'
       ),
       supabase.from(type === 'deadstock' ? 'deadstock_out' : 'stock_out').select(
         type === 'deadstock' ? 'id, product_id, quantity, deadstock_in_id, unit_cost' : 'id, product_id, quantity, vendor_id, source_out_stock_id, stock_in_id, unit_cost, stock_in:stock_in(reason:in_stock_reasons(name))'
@@ -80,7 +80,15 @@ export default function InventoryPage({ type = 'stock' }: { type?: 'stock' | 'wa
       const gudangStock = totalIn - totalOutGudang;
       const totalVendor = outToVendor - outFromVendor;
 
-      // Calculate Nilai Asset (per batch)
+      // Calculate Nilai Asset (per batch) and Notes Breakdown (for Deadstock)
+      const notesBreakdown = {
+        'Ganti Model': 0,
+        'Cancel Klien': 0,
+        'Overstock': 0,
+        'Defect': 0,
+        'Miss Spek': 0
+      };
+
       let assetGudang = 0;
       filteredStockIn.forEach(batch => {
         let batchOuts;
@@ -93,6 +101,11 @@ export default function InventoryPage({ type = 'stock' }: { type?: 'stock' | 'wa
         const remaining = batch.quantity - totalOut;
         if (remaining > 0) {
           assetGudang += remaining * (batch.unit_cost || (batch.total_cost / batch.quantity) || 0);
+          if (type === 'deadstock' && batch.notes) {
+            if (notesBreakdown[batch.notes as keyof typeof notesBreakdown] !== undefined) {
+              notesBreakdown[batch.notes as keyof typeof notesBreakdown] += remaining;
+            }
+          }
         }
       });
 
@@ -121,6 +134,7 @@ export default function InventoryPage({ type = 'stock' }: { type?: 'stock' | 'wa
         totalVendor: type === 'stock' ? totalVendor : 0,
         totalInventory: gudangStock + (type === 'stock' ? totalVendor : 0),
         assetValue: assetGudang + assetVendor,
+        notesBreakdown,
         status,
         hasHistory
       };
@@ -270,6 +284,11 @@ export default function InventoryPage({ type = 'stock' }: { type?: 'stock' | 'wa
       totalAssetValue: inventory.reduce((acc, curr) => acc + (curr.assetValue || 0), 0),
       habis: inventory.filter(i => i.status === 'HABIS').length,
       menipis: inventory.filter(i => i.status === 'MENIPIS').length,
+      gantiModel: inventory.reduce((acc, curr) => acc + (curr.notesBreakdown?.['Ganti Model'] || 0), 0),
+      cancelKlien: inventory.reduce((acc, curr) => acc + (curr.notesBreakdown?.['Cancel Klien'] || 0), 0),
+      overstock: inventory.reduce((acc, curr) => acc + (curr.notesBreakdown?.['Overstock'] || 0), 0),
+      defect: inventory.reduce((acc, curr) => acc + (curr.notesBreakdown?.['Defect'] || 0), 0),
+      missSpek: inventory.reduce((acc, curr) => acc + (curr.notesBreakdown?.['Miss Spek'] || 0), 0),
     };
   }, [inventory]);
 
@@ -282,58 +301,113 @@ export default function InventoryPage({ type = 'stock' }: { type?: 'stock' | 'wa
         <p className="text-gray-500 text-sm mt-1">Pusat informasi dan tracking stock terkini untuk {type}</p>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
-        <Card className="p-4 bg-white border-slate-200">
-          <div className="flex flex-col">
-            <span className="text-slate-500 text-xs font-semibold uppercase">Total Produk</span>
-            <span className="text-2xl font-bold text-slate-800 mt-1">{stats.totalProducts}</span>
-          </div>
-        </Card>
-        <Card className="p-4 bg-blue-50 border-blue-100">
-          <div className="flex flex-col">
-            <span className="text-blue-600 text-xs font-semibold uppercase">Stock Gudang</span>
-            <span className="text-2xl font-bold text-blue-900 mt-1">{stats.totalGudang}</span>
-          </div>
-        </Card>
-        <Card className="p-4 bg-indigo-50 border-indigo-100">
-          <div className="flex flex-col">
-            <span className="text-indigo-600 text-xs font-semibold uppercase">Stock Vendor</span>
-            <span className="text-2xl font-bold text-indigo-900 mt-1">{stats.totalVendor}</span>
-          </div>
-        </Card>
-        <Card className="p-4 bg-emerald-50 border-emerald-100">
-          <div className="flex flex-col">
-            <span className="text-emerald-600 text-xs font-semibold uppercase">Total Inventory</span>
-            <span className="text-2xl font-bold text-emerald-900 mt-1">{stats.totalInventory}</span>
-          </div>
-        </Card>
-        <Card className="p-4 bg-teal-50 border-teal-100">
-          <div className="flex flex-col">
-            <span className="text-teal-600 text-xs font-semibold uppercase flex items-center gap-1">
-              <DollarSign className="w-3 h-3" /> Nilai Asset
-            </span>
-            <span className="text-xl font-bold text-teal-900 mt-1" title={`Rp ${stats.totalAssetValue.toLocaleString('id-ID')}`}>
-              {stats.totalAssetValue >= 1000000000 
-                ? `${(stats.totalAssetValue / 1000000000).toFixed(1)} M` 
-                : stats.totalAssetValue >= 1000000 
-                ? `${(stats.totalAssetValue / 1000000).toFixed(1)} Jt` 
-                : stats.totalAssetValue.toLocaleString('id-ID')}
-            </span>
-          </div>
-        </Card>
-        <Card className="p-4 bg-rose-50 border-rose-100">
-          <div className="flex flex-col">
-            <span className="text-rose-600 text-xs font-semibold uppercase">Produk Habis</span>
-            <span className="text-2xl font-bold text-rose-900 mt-1">{stats.habis}</span>
-          </div>
-        </Card>
-        <Card className="p-4 bg-amber-50 border-amber-100">
-          <div className="flex flex-col">
-            <span className="text-amber-600 text-xs font-semibold uppercase">Produk Menipis</span>
-            <span className="text-2xl font-bold text-amber-900 mt-1">{stats.menipis}</span>
-          </div>
-        </Card>
-      </div>
+      {type === 'deadstock' ? (
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+          <Card className="p-4 bg-white border-slate-200">
+            <div className="flex flex-col">
+              <span className="text-slate-500 text-xs font-semibold uppercase">Total Produk</span>
+              <span className="text-2xl font-bold text-slate-800 mt-1">{stats.totalProducts}</span>
+            </div>
+          </Card>
+          <Card className="p-4 bg-teal-50 border-teal-100">
+            <div className="flex flex-col">
+              <span className="text-teal-600 text-xs font-semibold uppercase flex items-center gap-1">
+                <DollarSign className="w-3 h-3" /> Nilai Asset
+              </span>
+              <span className="text-xl font-bold text-teal-900 mt-1" title={`Rp ${stats.totalAssetValue.toLocaleString('id-ID')}`}>
+                {stats.totalAssetValue >= 1000000000 
+                  ? `${(stats.totalAssetValue / 1000000000).toFixed(1)} M` 
+                  : stats.totalAssetValue >= 1000000 
+                  ? `${(stats.totalAssetValue / 1000000).toFixed(1)} Jt` 
+                  : stats.totalAssetValue.toLocaleString('id-ID')}
+              </span>
+            </div>
+          </Card>
+          <Card className="p-4 bg-blue-50 border-blue-100">
+            <div className="flex flex-col">
+              <span className="text-blue-600 text-xs font-semibold uppercase">Ganti Model</span>
+              <span className="text-2xl font-bold text-blue-900 mt-1">{stats.gantiModel}</span>
+            </div>
+          </Card>
+          <Card className="p-4 bg-indigo-50 border-indigo-100">
+            <div className="flex flex-col">
+              <span className="text-indigo-600 text-xs font-semibold uppercase">Overstock</span>
+              <span className="text-2xl font-bold text-indigo-900 mt-1">{stats.overstock}</span>
+            </div>
+          </Card>
+          <Card className="p-4 bg-amber-50 border-amber-100">
+            <div className="flex flex-col">
+              <span className="text-amber-600 text-xs font-semibold uppercase">Cancel Klien</span>
+              <span className="text-2xl font-bold text-amber-900 mt-1">{stats.cancelKlien}</span>
+            </div>
+          </Card>
+          <Card className="p-4 bg-rose-50 border-rose-100">
+            <div className="flex flex-col">
+              <span className="text-rose-600 text-xs font-semibold uppercase">Defect</span>
+              <span className="text-2xl font-bold text-rose-900 mt-1">{stats.defect}</span>
+            </div>
+          </Card>
+          <Card className="p-4 bg-purple-50 border-purple-100">
+            <div className="flex flex-col">
+              <span className="text-purple-600 text-xs font-semibold uppercase">Miss Spek</span>
+              <span className="text-2xl font-bold text-purple-900 mt-1">{stats.missSpek}</span>
+            </div>
+          </Card>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+          <Card className="p-4 bg-white border-slate-200">
+            <div className="flex flex-col">
+              <span className="text-slate-500 text-xs font-semibold uppercase">Total Produk</span>
+              <span className="text-2xl font-bold text-slate-800 mt-1">{stats.totalProducts}</span>
+            </div>
+          </Card>
+          <Card className="p-4 bg-blue-50 border-blue-100">
+            <div className="flex flex-col">
+              <span className="text-blue-600 text-xs font-semibold uppercase">Stock Gudang</span>
+              <span className="text-2xl font-bold text-blue-900 mt-1">{stats.totalGudang}</span>
+            </div>
+          </Card>
+          <Card className="p-4 bg-indigo-50 border-indigo-100">
+            <div className="flex flex-col">
+              <span className="text-indigo-600 text-xs font-semibold uppercase">Stock Vendor</span>
+              <span className="text-2xl font-bold text-indigo-900 mt-1">{stats.totalVendor}</span>
+            </div>
+          </Card>
+          <Card className="p-4 bg-emerald-50 border-emerald-100">
+            <div className="flex flex-col">
+              <span className="text-emerald-600 text-xs font-semibold uppercase">Total Inventory</span>
+              <span className="text-2xl font-bold text-emerald-900 mt-1">{stats.totalInventory}</span>
+            </div>
+          </Card>
+          <Card className="p-4 bg-teal-50 border-teal-100">
+            <div className="flex flex-col">
+              <span className="text-teal-600 text-xs font-semibold uppercase flex items-center gap-1">
+                <DollarSign className="w-3 h-3" /> Nilai Asset
+              </span>
+              <span className="text-xl font-bold text-teal-900 mt-1" title={`Rp ${stats.totalAssetValue.toLocaleString('id-ID')}`}>
+                {stats.totalAssetValue >= 1000000000 
+                  ? `${(stats.totalAssetValue / 1000000000).toFixed(1)} M` 
+                  : stats.totalAssetValue >= 1000000 
+                  ? `${(stats.totalAssetValue / 1000000).toFixed(1)} Jt` 
+                  : stats.totalAssetValue.toLocaleString('id-ID')}
+              </span>
+            </div>
+          </Card>
+          <Card className="p-4 bg-rose-50 border-rose-100">
+            <div className="flex flex-col">
+              <span className="text-rose-600 text-xs font-semibold uppercase">Produk Habis</span>
+              <span className="text-2xl font-bold text-rose-900 mt-1">{stats.habis}</span>
+            </div>
+          </Card>
+          <Card className="p-4 bg-amber-50 border-amber-100">
+            <div className="flex flex-col">
+              <span className="text-amber-600 text-xs font-semibold uppercase">Produk Menipis</span>
+              <span className="text-2xl font-bold text-amber-900 mt-1">{stats.menipis}</span>
+            </div>
+          </Card>
+        </div>
+      )}
 
       <Card className="!p-0 border-slate-200 overflow-hidden">
         <div className="p-4 border-b border-slate-100 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
