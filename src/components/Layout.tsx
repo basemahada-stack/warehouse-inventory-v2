@@ -23,7 +23,6 @@ const sidebarMenus = [
   { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { path: '/in-stock', icon: ArrowDownToLine, label: 'In Stock' },
   { path: '/out-stock', icon: ArrowUpFromLine, label: 'Out Stock' },
-  { path: '/in-deadstock', icon: ArrowDownToLine, label: 'IN Deadstock' },
   { 
     path: '/inventory', 
     icon: Package, 
@@ -31,8 +30,17 @@ const sidebarMenus = [
     subMenus: [
       { path: '/inventory/stock', label: 'Stock' },
       { path: '/inventory/warehouse', label: 'Warehouse' },
-      { path: '/inventory/deadstock', label: 'Deadstock' },
       { path: '/inventory/cloudpop', label: 'Cloudpop' }
+    ]
+  },
+  { 
+    path: '/deadstock', 
+    icon: AlertTriangle, 
+    label: 'Deadstock',
+    subMenus: [
+      { path: '/deadstock/in', label: 'In Deadstock' },
+      { path: '/deadstock/out', label: 'Out Deadstock' },
+      { path: '/deadstock/inventory', label: 'Inventory Deadstock' }
     ]
   },
   { path: '/vendor-stock', icon: Warehouse, label: 'Vendor Stock' },
@@ -71,7 +79,8 @@ export default function Layout() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const location = useLocation();
   const [expandedMenu, setExpandedMenu] = useState<string | null>(
-    location.pathname.startsWith('/inventory') ? '/inventory' : null
+    location.pathname.startsWith('/inventory') ? '/inventory' : 
+    location.pathname.startsWith('/deadstock') ? '/deadstock' : null
   );
 
   const toggleSubmenu = (path: string) => {
