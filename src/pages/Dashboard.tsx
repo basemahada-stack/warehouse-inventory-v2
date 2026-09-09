@@ -32,15 +32,19 @@ export default function Dashboard() {
     
     setLoading(true);
     try {
-      const [pRes, inRes, outRes] = await Promise.all([
+      const [pRes, inRes, outRes, dsInRes, dsOutRes] = await Promise.all([
         supabase.from('products').select('id, product_name, product_code, minimum_stock, unit:units(name), is_active').eq('is_active', true),
         supabase.from('stock_in').select('id, transaction_number, transaction_date, quantity, product_id, created_at, reason:in_stock_reasons(name), product:products(product_name)'),
-        supabase.from('stock_out').select('id, transaction_number, transaction_date, quantity, product_id, created_at, vendor_id, source_out_stock_id, product:products(product_name), vendor:vendors(name)')
+        supabase.from('stock_out').select('id, transaction_number, transaction_date, quantity, product_id, created_at, vendor_id, source_out_stock_id, product:products(product_name), vendor:vendors(name)'),
+        supabase.from('deadstock_in').select('id, transaction_number, transaction_date, quantity, product_id, created_at, product:products(product_name)'),
+        supabase.from('deadstock_out').select('id, transaction_number, transaction_date, quantity, product_id, created_at, destination, product:products(product_name)')
       ]);
 
       const productsData = pRes.data || [];
       const inData = inRes.data || [];
       const outData = outRes.data || [];
+      const dsInData = (dsInRes?.data || []).map(d => ({ ...d, isDeadstock: true }));
+      const dsOutData = (dsOutRes?.data || []).map(d => ({ ...d, isDeadstock: true }));
 
       if (pRes.error) toast.error('Products Error: ' + pRes.error.message);
       if (inRes.error) toast.error('InStock Error: ' + inRes.error.message);
@@ -53,6 +57,10 @@ export default function Dashboard() {
         const outToVendor = outData.filter(s => s.product_id === p.id && s.vendor_id).reduce((sum, s) => sum + s.quantity, 0);
         const outFromVendor = outData.filter(s => s.product_id === p.id && s.source_out_stock_id).reduce((sum, s) => sum + s.quantity, 0);
         
+        const dsInTotal = dsInData.filter(s => s.product_id === p.id).reduce((sum, s) => sum + s.quantity, 0);
+        const dsOutTotal = dsOutData.filter(s => s.product_id === p.id).reduce((sum, s) => sum + s.quantity, 0);
+        const dsStock = dsInTotal - dsOutTotal;
+
         const gudangStock = totalIn - outFromGudang;
         const vStock = outToVendor - outFromVendor;
         const totalInventory = gudangStock + vStock;
@@ -66,14 +74,15 @@ export default function Dashboard() {
           gudangStock,
           totalVendor: vStock,
           totalInventory,
+          dsStock,
           status,
-          hasHistory: totalIn > 0 || outFromGudang > 0 || outToVendor > 0 || outFromVendor > 0
+          hasHistory: totalIn > 0 || outFromGudang > 0 || outToVendor > 0 || outFromVendor > 0 || dsInTotal > 0 || dsOutTotal > 0
         };
       }).filter(item => item.hasHistory);
 
       setInventory(calculatedInventory);
-      setStockIn(inData);
-      setStockOut(outData);
+      setStockIn([...inData, ...dsInData]);
+      setStockOut([...outData, ...dsOutData]);
     } catch (err: any) {
       toast.error('Gagal mengambil data dashboard');
     }
@@ -90,6 +99,7 @@ export default function Dashboard() {
       totalGudang: inventory.reduce((sum, i) => sum + i.gudangStock, 0),
       totalVendor: inventory.reduce((sum, i) => sum + i.totalVendor, 0),
       totalInventory: inventory.reduce((sum, i) => sum + i.totalInventory, 0),
+      totalDeadstock: inventory.reduce((sum, i) => sum + (i.dsStock || 0), 0),
       totalProducts: inventory.length,
       lowStock: inventory.filter(i => i.status === 'MENIPIS').length,
       outOfStock: inventory.filter(i => i.status === 'HABIS').length,
@@ -178,12 +188,19 @@ export default function Dashboard() {
     const all = [
       ...stockIn.map(s => {
         return {
-          id: s.id, type: 'IN', 
+          id: s.id, type: s.isDeadstock ? 'DS IN' : 'IN', 
           date: s.created_at, ref: s.transaction_number, product: s.product?.product_name, qty: s.quantity,
-          badgeColor: 'bg-blue-100 text-blue-800'
+          badgeColor: s.isDeadstock ? 'bg-slate-100 text-slate-800' : 'bg-blue-100 text-blue-800'
         };
       }),
       ...stockOut.map(s => {
+        if (s.isDeadstock) {
+          return {
+            id: s.id, type: 'DS OUT', 
+            date: s.created_at, ref: s.transaction_number, product: s.product?.product_name, qty: s.quantity,
+            badgeColor: 'bg-rose-100 text-rose-800'
+          };
+        }
         if (s.vendor_id && !s.source_out_stock_id) {
           return {
             id: s.id, type: 'TO VENDOR', 
@@ -228,10 +245,11 @@ export default function Dashboard() {
       </div>
       
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-3">
         <KPICard title="Total Stock Gudang" value={stats.totalGudang} icon={<Package className="w-6 h-6" />} color="blue" />
         <KPICard title="Total Stock Vendor" value={stats.totalVendor} icon={<Box className="w-6 h-6" />} color="purple" />
         <KPICard title="Total Inventory" value={stats.totalInventory} icon={<Layers className="w-6 h-6" />} color="indigo" />
+        <KPICard title="Total Deadstock" value={stats.totalDeadstock} icon={<Package className="w-6 h-6" />} color="teal" />
         <KPICard title="Total Produk Aktif" value={stats.totalProducts} icon={<Activity className="w-6 h-6" />} color="teal" />
         <KPICard title="Stock Menipis" value={stats.lowStock} icon={<AlertCircle className="w-6 h-6" />} color="amber" />
         <KPICard title="Stock Habis" value={stats.outOfStock} icon={<AlertTriangle className="w-6 h-6" />} color="red" />

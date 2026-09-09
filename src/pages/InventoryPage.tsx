@@ -100,10 +100,11 @@ export default function InventoryPage({ type = 'stock' }: { type?: 'stock' | 'wa
         const totalOut = batchOuts.reduce((sum, out) => sum + (out.quantity || 0), 0);
         const remaining = batch.quantity - totalOut;
         if (remaining > 0) {
-          assetGudang += remaining * (batch.unit_cost || (batch.total_cost / batch.quantity) || 0);
+          const batchAssetValue = remaining * (batch.unit_cost || (batch.total_cost / batch.quantity) || 0);
+          assetGudang += batchAssetValue;
           if (type === 'deadstock' && batch.notes) {
             if (notesBreakdown[batch.notes as keyof typeof notesBreakdown] !== undefined) {
-              notesBreakdown[batch.notes as keyof typeof notesBreakdown] += remaining;
+              notesBreakdown[batch.notes as keyof typeof notesBreakdown] += batchAssetValue;
             }
           }
         }
@@ -292,6 +293,12 @@ export default function InventoryPage({ type = 'stock' }: { type?: 'stock' | 'wa
     };
   }, [inventory]);
 
+  const formatMoneyShort = (value: number) => {
+    if (value >= 1000000000) return `${(value / 1000000000).toFixed(1)} M`;
+    if (value >= 1000000) return `${(value / 1000000).toFixed(1)} Jt`;
+    return value.toLocaleString('id-ID');
+  };
+
   if (!hasSupabaseConfig) return null;
 
   return (
@@ -315,42 +322,38 @@ export default function InventoryPage({ type = 'stock' }: { type?: 'stock' | 'wa
                 <DollarSign className="w-3 h-3" /> Nilai Asset
               </span>
               <span className="text-xl font-bold text-teal-900 mt-1" title={`Rp ${stats.totalAssetValue.toLocaleString('id-ID')}`}>
-                {stats.totalAssetValue >= 1000000000 
-                  ? `${(stats.totalAssetValue / 1000000000).toFixed(1)} M` 
-                  : stats.totalAssetValue >= 1000000 
-                  ? `${(stats.totalAssetValue / 1000000).toFixed(1)} Jt` 
-                  : stats.totalAssetValue.toLocaleString('id-ID')}
+                {formatMoneyShort(stats.totalAssetValue)}
               </span>
             </div>
           </Card>
           <Card className="p-4 bg-blue-50 border-blue-100">
             <div className="flex flex-col">
               <span className="text-blue-600 text-xs font-semibold uppercase">Ganti Model</span>
-              <span className="text-2xl font-bold text-blue-900 mt-1">{stats.gantiModel}</span>
+              <span className="text-xl font-bold text-blue-900 mt-1" title={`Rp ${stats.gantiModel.toLocaleString('id-ID')}`}>{formatMoneyShort(stats.gantiModel)}</span>
             </div>
           </Card>
           <Card className="p-4 bg-indigo-50 border-indigo-100">
             <div className="flex flex-col">
               <span className="text-indigo-600 text-xs font-semibold uppercase">Overstock</span>
-              <span className="text-2xl font-bold text-indigo-900 mt-1">{stats.overstock}</span>
+              <span className="text-xl font-bold text-indigo-900 mt-1" title={`Rp ${stats.overstock.toLocaleString('id-ID')}`}>{formatMoneyShort(stats.overstock)}</span>
             </div>
           </Card>
           <Card className="p-4 bg-amber-50 border-amber-100">
             <div className="flex flex-col">
               <span className="text-amber-600 text-xs font-semibold uppercase">Cancel Klien</span>
-              <span className="text-2xl font-bold text-amber-900 mt-1">{stats.cancelKlien}</span>
+              <span className="text-xl font-bold text-amber-900 mt-1" title={`Rp ${stats.cancelKlien.toLocaleString('id-ID')}`}>{formatMoneyShort(stats.cancelKlien)}</span>
             </div>
           </Card>
           <Card className="p-4 bg-rose-50 border-rose-100">
             <div className="flex flex-col">
               <span className="text-rose-600 text-xs font-semibold uppercase">Defect</span>
-              <span className="text-2xl font-bold text-rose-900 mt-1">{stats.defect}</span>
+              <span className="text-xl font-bold text-rose-900 mt-1" title={`Rp ${stats.defect.toLocaleString('id-ID')}`}>{formatMoneyShort(stats.defect)}</span>
             </div>
           </Card>
           <Card className="p-4 bg-purple-50 border-purple-100">
             <div className="flex flex-col">
               <span className="text-purple-600 text-xs font-semibold uppercase">Miss Spek</span>
-              <span className="text-2xl font-bold text-purple-900 mt-1">{stats.missSpek}</span>
+              <span className="text-xl font-bold text-purple-900 mt-1" title={`Rp ${stats.missSpek.toLocaleString('id-ID')}`}>{formatMoneyShort(stats.missSpek)}</span>
             </div>
           </Card>
         </div>
