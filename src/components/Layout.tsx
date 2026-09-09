@@ -23,6 +23,7 @@ const sidebarMenus = [
   { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { path: '/in-stock', icon: ArrowDownToLine, label: 'In Stock' },
   { path: '/out-stock', icon: ArrowUpFromLine, label: 'Out Stock' },
+  { path: '/in-deadstock', icon: ArrowDownToLine, label: 'IN Deadstock' },
   { 
     path: '/inventory', 
     icon: Package, 

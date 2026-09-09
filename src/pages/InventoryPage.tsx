@@ -42,8 +42,12 @@ export default function InventoryPage({ type = 'stock' }: { type?: 'stock' | 'wa
     // Fetch all required data to calculate inventory
     const [productsRes, inRes, outRes, catRes] = await Promise.all([
       supabase.from('products').select('*, category:categories(id, name), unit:units(id, name)'),
-      supabase.from('stock_in').select('id, product_id, quantity, total_cost, unit_cost, reason:in_stock_reasons(name)'),
-      supabase.from('stock_out').select('id, product_id, quantity, vendor_id, source_out_stock_id, stock_in_id, unit_cost, stock_in:stock_in(reason:in_stock_reasons(name))'),
+      supabase.from(type === 'deadstock' ? 'deadstock_in' : 'stock_in').select(
+        type === 'deadstock' ? 'id, product_id, quantity, total_cost, unit_cost' : 'id, product_id, quantity, total_cost, unit_cost, reason:in_stock_reasons(name)'
+      ),
+      supabase.from(type === 'deadstock' ? 'deadstock_out' : 'stock_out').select(
+        type === 'deadstock' ? 'id, product_id, quantity, deadstock_in_id, unit_cost' : 'id, product_id, quantity, vendor_id, source_out_stock_id, stock_in_id, unit_cost, stock_in:stock_in(reason:in_stock_reasons(name))'
+      ),
       supabase.from('categories').select('*').eq('is_active', true)
     ]);
 
@@ -55,14 +59,23 @@ export default function InventoryPage({ type = 'stock' }: { type?: 'stock' | 'wa
 
     // Calculate per product
     const calculated = products.map(product => {
-      const filteredStockIn = stockIn.filter(s => s.product_id === product.id && (s.reason?.name || '').toLowerCase() === type.toLowerCase());
+      let filteredStockIn;
+      let outFromGudang;
+      let outToVendor = 0;
+      let outFromVendor = 0;
+      
+      if (type === 'deadstock') {
+        filteredStockIn = stockIn.filter(s => s.product_id === product.id);
+        outFromGudang = stockOut.filter(s => s.product_id === product.id);
+      } else {
+        filteredStockIn = stockIn.filter(s => s.product_id === product.id && (s.reason?.name || '').toLowerCase() === type.toLowerCase());
+        outFromGudang = stockOut.filter(s => s.product_id === product.id && !s.source_out_stock_id && (s.stock_in?.reason?.name || '').toLowerCase() === type.toLowerCase());
+        outToVendor = stockOut.filter(s => s.product_id === product.id && s.vendor_id).reduce((sum, s) => sum + (s.quantity || 0), 0);
+        outFromVendor = stockOut.filter(s => s.product_id === product.id && s.source_out_stock_id).reduce((sum, s) => sum + (s.quantity || 0), 0);
+      }
+      
       const totalIn = filteredStockIn.reduce((sum, s) => sum + (s.quantity || 0), 0);
-      
-      const outFromGudang = stockOut.filter(s => s.product_id === product.id && !s.source_out_stock_id && (s.stock_in?.reason?.name || '').toLowerCase() === type.toLowerCase());
       const totalOutGudang = outFromGudang.reduce((sum, s) => sum + (s.quantity || 0), 0);
-      
-      const outToVendor = stockOut.filter(s => s.product_id === product.id && s.vendor_id).reduce((sum, s) => sum + (s.quantity || 0), 0);
-      const outFromVendor = stockOut.filter(s => s.product_id === product.id && s.source_out_stock_id).reduce((sum, s) => sum + (s.quantity || 0), 0);
       
       const gudangStock = totalIn - totalOutGudang;
       const totalVendor = outToVendor - outFromVendor;
@@ -70,7 +83,12 @@ export default function InventoryPage({ type = 'stock' }: { type?: 'stock' | 'wa
       // Calculate Nilai Asset (per batch)
       let assetGudang = 0;
       filteredStockIn.forEach(batch => {
-        const batchOuts = stockOut.filter(out => out.stock_in_id === batch.id && !out.source_out_stock_id);
+        let batchOuts;
+        if (type === 'deadstock') {
+          batchOuts = stockOut.filter(out => out.deadstock_in_id === batch.id);
+        } else {
+          batchOuts = stockOut.filter(out => out.stock_in_id === batch.id && !out.source_out_stock_id);
+        }
         const totalOut = batchOuts.reduce((sum, out) => sum + (out.quantity || 0), 0);
         const remaining = batch.quantity - totalOut;
         if (remaining > 0) {
@@ -130,14 +148,18 @@ export default function InventoryPage({ type = 'stock' }: { type?: 'stock' | 'wa
     }
     try {
       const [inRes, outRes] = await Promise.all([
-        supabase.from('stock_in').select('*, pic:pics(name), reason:in_stock_reasons(name)').eq('product_id', productId),
-        supabase.from('stock_out').select('*, pic:pics(name), vendor:vendors(name), stock_in:stock_in(deadstock_status, reason:in_stock_reasons(name))').eq('product_id', productId)
+        supabase.from(type === 'deadstock' ? 'deadstock_in' : 'stock_in').select(
+          type === 'deadstock' ? '*, pic:pics(name)' : '*, pic:pics(name), reason:in_stock_reasons(name)'
+        ).eq('product_id', productId),
+        supabase.from(type === 'deadstock' ? 'deadstock_out' : 'stock_out').select(
+          type === 'deadstock' ? '*, pic:pics(name), deadstock_in:deadstock_in(deadstock_status)' : '*, pic:pics(name), vendor:vendors(name), stock_in:stock_in(deadstock_status, reason:in_stock_reasons(name))'
+        ).eq('product_id', productId)
       ]);
 
       const moves: any[] = [];
       
       (inRes.data || []).forEach(item => {
-        if ((item.reason?.name || '').toLowerCase() !== type.toLowerCase()) return;
+        if (type !== 'deadstock' && (item.reason?.name || '').toLowerCase() !== type.toLowerCase()) return;
         moves.push({
           id: item.id,
           date: item.transaction_date || item.created_at,
@@ -151,31 +173,7 @@ export default function InventoryPage({ type = 'stock' }: { type?: 'stock' | 'wa
       });
 
       (outRes.data || []).forEach(item => {
-        if (!item.source_out_stock_id && (item.stock_in?.reason?.name || '').toLowerCase() !== type.toLowerCase()) return;
-        
-        if (item.vendor_id && !item.source_out_stock_id) {
-          moves.push({
-            id: item.id,
-            date: item.transaction_date || item.created_at,
-            type: 'TO VENDOR',
-            reference: item.transaction_number,
-            qty: -item.quantity,
-            location: item.vendor?.name || 'Vendor',
-            pic: item.pic?.name || '-',
-            deadstockStatus: item.stock_in?.deadstock_status || '-'
-          });
-        } else if (item.source_out_stock_id) {
-           moves.push({
-            id: item.id,
-            date: item.transaction_date || item.created_at,
-            type: 'FROM VENDOR',
-            reference: item.transaction_number,
-            qty: -item.quantity,
-            location: item.destination || 'External',
-            pic: item.pic?.name || '-',
-            deadstockStatus: item.stock_in?.deadstock_status || '-'
-          });
-        } else {
+        if (type === 'deadstock') {
           moves.push({
             id: item.id,
             date: item.transaction_date || item.created_at,
@@ -184,8 +182,45 @@ export default function InventoryPage({ type = 'stock' }: { type?: 'stock' | 'wa
             qty: -item.quantity,
             location: item.destination || 'Gudang',
             pic: item.pic?.name || '-',
-            deadstockStatus: item.stock_in?.deadstock_status || '-'
+            deadstockStatus: item.deadstock_in?.deadstock_status || '-'
           });
+        } else {
+          if (!item.source_out_stock_id && (item.stock_in?.reason?.name || '').toLowerCase() !== type.toLowerCase()) return;
+          
+          if (item.vendor_id && !item.source_out_stock_id) {
+            moves.push({
+              id: item.id,
+              date: item.transaction_date || item.created_at,
+              type: 'TO VENDOR',
+              reference: item.transaction_number,
+              qty: -item.quantity,
+              location: item.vendor?.name || 'Vendor',
+              pic: item.pic?.name || '-',
+              deadstockStatus: item.stock_in?.deadstock_status || '-'
+            });
+          } else if (item.source_out_stock_id) {
+             moves.push({
+              id: item.id,
+              date: item.transaction_date || item.created_at,
+              type: 'FROM VENDOR',
+              reference: item.transaction_number,
+              qty: -item.quantity,
+              location: item.destination || 'External',
+              pic: item.pic?.name || '-',
+              deadstockStatus: item.stock_in?.deadstock_status || '-'
+            });
+          } else {
+            moves.push({
+              id: item.id,
+              date: item.transaction_date || item.created_at,
+              type: 'OUT',
+              reference: item.transaction_number,
+              qty: -item.quantity,
+              location: item.destination || 'Gudang',
+              pic: item.pic?.name || '-',
+              deadstockStatus: item.stock_in?.deadstock_status || '-'
+            });
+          }
         }
       });
 

@@ -4,6 +4,7 @@ import SettingsLayout from './components/SettingsLayout';
 import Dashboard from './pages/Dashboard';
 import InventoryPage from './pages/InventoryPage';
 import InStockPage from './pages/transactions/InStockPage';
+import InDeadstockPage from './pages/transactions/InDeadstockPage';
 import OutStockPage from './pages/transactions/OutStockPage';
 import VendorStockPage from './pages/transactions/VendorStockPage';
 import ProductsPage from './pages/settings/ProductsPage';
@@ -28,6 +29,7 @@ export default function App() {
           <Route path="inventory/deadstock" element={<InventoryPage type="deadstock" />} />
           <Route path="inventory/cloudpop" element={<InventoryPage type="cloudpop" />} />
           <Route path="in-stock" element={<InStockPage />} />
+          <Route path="in-deadstock" element={<InDeadstockPage />} />
           <Route path="out-stock" element={<OutStockPage />} />
           <Route path="vendor-stock" element={<VendorStockPage />} />
           <Route path="finance-recap" element={<FinanceRecapPage />} />

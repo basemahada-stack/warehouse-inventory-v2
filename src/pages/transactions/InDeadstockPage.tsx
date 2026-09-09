@@ -5,11 +5,10 @@ import { Plus, Search, Loader2, Eye, Edit2, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 
-export default function InStockPage() {
+export default function InDeadstockPage() {
   const [data, setData] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [vendors, setVendors] = useState<any[]>([]);
-  const [reasons, setReasons] = useState<any[]>([]);
   const [pics, setPics] = useState<any[]>([]);
   
   const [loading, setLoading] = useState(true);
@@ -37,16 +36,15 @@ export default function InStockPage() {
 
   const fetchData = async () => {
     if (!hasSupabaseConfig) {
-      import('../../lib/mockData').then((mock) => {
-        setData(mock.mockInStock);
-        setTotalRows(mock.mockInStock.length);
-        setLoading(false);
-      });
+      // Mock data logic for deadstock here if needed
+      setData([]);
+      setTotalRows(0);
+      setLoading(false);
       return;
     }
     setLoading(true);
-    let query = supabase.from('stock_in')
-      .select('*, product:products(product_name, unit:units(name)), vendor:vendors(name), reason:in_stock_reasons(name), pic:pics(name)', { count: 'exact' })
+    let query = supabase.from('deadstock_in')
+      .select('*, product:products(product_name, unit:units(name)), vendor:vendors(name), pic:pics(name)', { count: 'exact' })
       .order('created_at', { ascending: false });
       
     if (search) query = query.ilike('transaction_number', `%${search}%`);
@@ -73,20 +71,17 @@ export default function InStockPage() {
       import('../../lib/mockData').then((mock) => {
         setProducts(mock.mockProducts);
         setVendors(mock.mockVendors);
-        setReasons(mock.mockReasons);
         setPics(mock.mockPics);
       });
       return;
     }
-    const [pRes, vRes, rRes, picRes] = await Promise.all([
+    const [pRes, vRes, picRes] = await Promise.all([
       supabase.from('products').select('*').eq('is_active', true),
       supabase.from('vendors').select('*').eq('is_active', true),
-      supabase.from('in_stock_reasons').select('*').eq('is_active', true),
       supabase.from('pics').select('*').eq('is_active', true),
     ]);
     setProducts(pRes.data || []);
     setVendors(vRes.data || []);
-    setReasons(rRes.data || []);
     setPics(picRes.data || []);
   };
 
@@ -106,7 +101,6 @@ export default function InStockPage() {
         product_id: item.product_id,
         quantity: item.quantity,
         vendor_id: item.vendor_id,
-        reason_id: item.reason_id,
         pic_id: item.pic_id,
         total_cost: item.total_cost || 0,
         notes: item.notes,
@@ -131,7 +125,7 @@ export default function InStockPage() {
     }
     if (!confirm('Apakah Anda yakin ingin menghapus transaksi ini?')) return;
     try {
-      const { error } = await supabase.from('stock_in').delete().eq('id', id);
+      const { error } = await supabase.from('deadstock_in').delete().eq('id', id);
       if (error) throw error;
       toast.success('Transaksi berhasil dihapus');
       fetchData();
@@ -141,9 +135,9 @@ export default function InStockPage() {
   };
 
   const generateTransactionNumber = async (dateStr: string) => {
-    const datePrefix = `IN-${format(new Date(dateStr), 'yyMMdd')}`;
+    const datePrefix = `DSIN-${format(new Date(dateStr), 'yyMMdd')}`;
     const { data, error } = await supabase
-      .from('stock_in')
+      .from('deadstock_in')
       .select('transaction_number')
       .ilike('transaction_number', `${datePrefix}%`)
       .order('transaction_number', { ascending: false })
@@ -181,7 +175,6 @@ export default function InStockPage() {
         product_id: formData.product_id,
         quantity: formData.quantity,
         vendor_id: formData.vendor_id || null,
-        reason_id: formData.reason_id || null,
         pic_id: formData.pic_id,
         total_cost: formData.total_cost || 0,
         unit_cost: (formData.total_cost || 0) / (formData.quantity || 1),
@@ -190,12 +183,12 @@ export default function InStockPage() {
       };
 
       if (editingId) {
-        const { error } = await (supabase.from('stock_in') as any).update(payload).eq('id', editingId);
+        const { error } = await (supabase.from('deadstock_in') as any).update(payload).eq('id', editingId);
         if (error) throw error;
         toast.success('Transaksi berhasil diperbarui');
       } else {
         const trxNumber = await generateTransactionNumber(formData.transaction_date);
-        const { error } = await (supabase.from('stock_in') as any).insert({
+        const { error } = await (supabase.from('deadstock_in') as any).insert({
           ...payload,
           transaction_number: trxNumber
         });
@@ -218,11 +211,11 @@ export default function InStockPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">In Stock</h1>
-          <p className="text-gray-500 text-sm mt-1">Pencatatan barang masuk ke gudang</p>
+          <h1 className="text-2xl font-bold text-gray-900">IN Deadstock</h1>
+          <p className="text-gray-500 text-sm mt-1">Pencatatan barang deadstock masuk ke gudang</p>
         </div>
         <Button onClick={() => handleOpenForm()}>
-          <Plus className="w-4 h-4" /> Tambah In Stock
+          <Plus className="w-4 h-4" /> Tambah IN Deadstock
         </Button>
       </div>
 
@@ -283,17 +276,17 @@ export default function InStockPage() {
                 <th className="px-4 py-2 text-xs border-b border-slate-100 text-right">Quantity</th>
                 <th className="px-4 py-2 text-xs border-b border-slate-100 text-right">Total Cost</th>
                 <th className="px-4 py-2 text-xs border-b border-slate-100 text-right">Cost Satuan</th>
-                <th className="px-4 py-2 text-xs border-b border-slate-100">Status IN</th>
                 <th className="px-4 py-2 text-xs border-b border-slate-100">PIC</th>
-                <th className="px-4 py-2 text-xs border-b border-slate-100">Keterangan</th>
+                <th className="px-4 py-2 text-xs border-b border-slate-100">Status Deadstock</th>
+                <th className="px-4 py-2 text-xs border-b border-slate-100">Ket. Sales</th>
                 <th className="px-4 py-2 text-xs border-b border-slate-100 text-center">Action</th>
               </tr>
             </thead>
             <tbody className="text-xs text-slate-600">
               {loading ? (
-                <tr><td colSpan={14} className="px-4 py-8 text-center"><Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />Memuat...</td></tr>
+                <tr><td colSpan={13} className="px-4 py-8 text-center"><Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />Memuat...</td></tr>
               ) : data.length === 0 ? (
-                <tr><td colSpan={14} className="px-4 py-8 text-center text-gray-500">Tidak ada data</td></tr>
+                <tr><td colSpan={13} className="px-4 py-8 text-center text-gray-500">Tidak ada data</td></tr>
               ) : (
                 data.map((item, index) => (
                   <tr key={item.id} className="hover:bg-slate-50 border-b border-slate-100">
@@ -306,8 +299,8 @@ export default function InStockPage() {
                     <td className="px-4 py-3 text-right font-bold text-emerald-600">+{item.quantity}</td>
                     <td className="px-4 py-3 text-right">Rp {(item.total_cost || 0).toLocaleString('id-ID')}</td>
                     <td className="px-4 py-3 text-right">Rp {(item.unit_cost || 0).toLocaleString('id-ID')}</td>
-                    <td className="px-4 py-3">{item.reason?.name || '-'}</td>
                     <td className="px-4 py-3">{item.pic?.name || '-'}</td>
+                    <td className="px-4 py-3">{item.deadstock_status || '-'}</td>
                     <td className="px-4 py-3">{item.notes || '-'}</td>
                     <td className="px-4 py-3 text-center">
                       <div className="flex items-center justify-center gap-2">
@@ -343,7 +336,7 @@ export default function InStockPage() {
       </Card>
 
       {/* Form Modal */}
-      <Modal isOpen={isFormModalOpen} onClose={() => setIsFormModalOpen(false)} title={editingId ? "Edit In Stock" : "Tambah In Stock"}>
+      <Modal isOpen={isFormModalOpen} onClose={() => setIsFormModalOpen(false)} title={editingId ? "Edit IN Deadstock" : "Tambah IN Deadstock"}>
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input type="date" label="Tanggal Transaksi" required value={formData.transaction_date || ''} onChange={e => setFormData({ ...formData, transaction_date: e.target.value })} />
           
@@ -366,17 +359,17 @@ export default function InStockPage() {
             Cost Satuan: <span className="text-slate-800 font-bold text-sm ml-1">Rp {((formData.total_cost || 0) / (formData.quantity || 1)).toLocaleString('id-ID')}</span>
           </div>
 
-          <Select label="Status IN" value={formData.reason_id || ''} onChange={e => setFormData({ ...formData, reason_id: e.target.value })}>
-            <option value="">Pilih Status IN</option>
-            {reasons.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </Select>
-
           <Select label="PIC" required value={formData.pic_id || ''} onChange={e => setFormData({ ...formData, pic_id: e.target.value })}>
             <option value="">Pilih PIC</option>
             {pics.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </Select>
 
-          <Input label="Keterangan / Notes" value={formData.notes || ''} onChange={e => setFormData({ ...formData, notes: e.target.value })} placeholder="Keterangan tambahan..." />
+          <Select label="Status Deadstock" required value={formData.deadstock_status || ''} onChange={e => setFormData({ ...formData, deadstock_status: e.target.value })}>
+            <option value="">Pilih Status</option>
+            <option value="Polosan">Polosan</option>
+            <option value="Logo">Logo</option>
+          </Select>
+          <Input label="Ket. Sales" value={formData.notes || ''} onChange={e => setFormData({ ...formData, notes: e.target.value })} placeholder="Keterangan tambahan..." />
 
           <div className="flex justify-end gap-3 mt-6">
             <Button type="button" variant="ghost" onClick={() => setIsFormModalOpen(false)}>Batal</Button>
@@ -386,7 +379,7 @@ export default function InStockPage() {
       </Modal>
 
       {/* View Detail Modal */}
-      <Modal isOpen={isViewModalOpen} onClose={() => setIsViewModalOpen(false)} title="Detail Transaksi In Stock">
+      <Modal isOpen={isViewModalOpen} onClose={() => setIsViewModalOpen(false)} title="Detail Transaksi IN Deadstock">
         {viewData && (
           <div className="space-y-4 text-sm">
             <div className="grid grid-cols-3 gap-2 border-b border-slate-100 pb-2">
@@ -418,15 +411,15 @@ export default function InStockPage() {
               <span className="col-span-2">Rp {(viewData.unit_cost || 0).toLocaleString('id-ID')}</span>
             </div>
             <div className="grid grid-cols-3 gap-2 border-b border-slate-100 pb-2">
-              <span className="text-slate-500">Status IN</span>
-              <span className="col-span-2">{viewData.reason?.name || '-'}</span>
-            </div>
-            <div className="grid grid-cols-3 gap-2 border-b border-slate-100 pb-2">
               <span className="text-slate-500">PIC</span>
               <span className="col-span-2">{viewData.pic?.name || '-'}</span>
             </div>
             <div className="grid grid-cols-3 gap-2 border-b border-slate-100 pb-2">
-              <span className="text-slate-500">Keterangan</span>
+              <span className="text-slate-500">Status Deadstock</span>
+              <span className="col-span-2">{viewData.deadstock_status || '-'}</span>
+            </div>
+            <div className="grid grid-cols-3 gap-2 border-b border-slate-100 pb-2">
+              <span className="text-slate-500">Ket. Sales</span>
               <span className="col-span-2">{viewData.notes || '-'}</span>
             </div>
             <div className="grid grid-cols-3 gap-2">
@@ -442,4 +435,3 @@ export default function InStockPage() {
     </div>
   );
 }
-

@@ -116,3 +116,35 @@ CREATE TABLE vendor_stock (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- 11. Deadstock In Table
+CREATE TABLE deadstock_in (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    transaction_number VARCHAR(100) NOT NULL UNIQUE,
+    transaction_date DATE NOT NULL,
+    product_id UUID REFERENCES products(id) ON DELETE RESTRICT,
+    quantity INTEGER NOT NULL,
+    vendor_id UUID REFERENCES vendors(id) ON DELETE SET NULL,
+    pic_id UUID REFERENCES pics(id) ON DELETE RESTRICT,
+    total_cost NUMERIC(15, 2) DEFAULT 0,
+    unit_cost NUMERIC(15, 2) DEFAULT 0,
+    notes TEXT,
+    deadstock_status VARCHAR(50),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 12. Deadstock Out Table
+CREATE TABLE deadstock_out (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    transaction_number VARCHAR(100) NOT NULL UNIQUE,
+    transaction_date DATE NOT NULL,
+    product_id UUID REFERENCES products(id) ON DELETE RESTRICT,
+    deadstock_in_id UUID REFERENCES deadstock_in(id) ON DELETE RESTRICT,
+    quantity INTEGER NOT NULL,
+    total_cost NUMERIC(15, 2) DEFAULT 0,
+    unit_cost NUMERIC(15, 2) DEFAULT 0,
+    pic_id UUID REFERENCES pics(id) ON DELETE RESTRICT,
+    destination TEXT,
+    notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
