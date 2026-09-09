@@ -126,6 +126,7 @@ CREATE TABLE deadstock_in (
     quantity INTEGER NOT NULL,
     vendor_id UUID REFERENCES vendors(id) ON DELETE SET NULL,
     pic_id UUID REFERENCES pics(id) ON DELETE RESTRICT,
+    invoice_number VARCHAR(100),
     total_cost NUMERIC(15, 2) DEFAULT 0,
     unit_cost NUMERIC(15, 2) DEFAULT 0,
     notes TEXT,
@@ -144,6 +145,7 @@ CREATE TABLE deadstock_out (
     total_cost NUMERIC(15, 2) DEFAULT 0,
     unit_cost NUMERIC(15, 2) DEFAULT 0,
     pic_id UUID REFERENCES pics(id) ON DELETE RESTRICT,
+    invoice_number VARCHAR(100),
     destination TEXT,
     notes TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()

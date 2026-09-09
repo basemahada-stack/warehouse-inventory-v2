@@ -168,7 +168,9 @@ export default function InventoryPage({ type = 'stock' }: { type?: 'stock' | 'wa
           qty: item.quantity,
           location: 'Gudang',
           pic: item.pic?.name || '-',
-          deadstockStatus: item.deadstock_status || '-'
+          deadstockStatus: item.deadstock_status || '-',
+          invoiceNumber: item.invoice_number || '-',
+          ketSales: item.notes || '-'
         });
       });
 
@@ -182,7 +184,9 @@ export default function InventoryPage({ type = 'stock' }: { type?: 'stock' | 'wa
             qty: -item.quantity,
             location: item.destination || 'Gudang',
             pic: item.pic?.name || '-',
-            deadstockStatus: item.deadstock_in?.deadstock_status || '-'
+            deadstockStatus: item.deadstock_in?.deadstock_status || '-',
+            invoiceNumber: item.invoice_number || '-',
+            ketSales: item.notes || '-'
           });
         } else {
           if (!item.source_out_stock_id && (item.stock_in?.reason?.name || '').toLowerCase() !== type.toLowerCase()) return;
@@ -502,8 +506,10 @@ export default function InventoryPage({ type = 'stock' }: { type?: 'stock' | 'wa
                           <th className="px-4 py-2 border-b border-slate-200">Ref</th>
                           <th className="px-4 py-2 border-b border-slate-200 text-right">Qty</th>
                           <th className="px-4 py-2 border-b border-slate-200">Lokasi</th>
-                          <th className="px-4 py-2 border-b border-slate-200">PIC</th>
+                          <th className="px-4 py-2 border-b border-slate-200">{type === 'deadstock' ? 'PIC Sales' : 'PIC'}</th>
+                          {type === 'deadstock' && <th className="px-4 py-2 border-b border-slate-200">No Invoice</th>}
                           {type === 'deadstock' && <th className="px-4 py-2 border-b border-slate-200">Status Deadstock</th>}
+                          {type === 'deadstock' && <th className="px-4 py-2 border-b border-slate-200">Ket. Sales</th>}
                         </tr>
                       </thead>
                       <tbody className="text-xs text-slate-600">
@@ -526,7 +532,9 @@ export default function InventoryPage({ type = 'stock' }: { type?: 'stock' | 'wa
                               </td>
                               <td className="px-4 py-3 truncate max-w-[120px]">{m.location}</td>
                               <td className="px-4 py-3">{m.pic}</td>
+                              {type === 'deadstock' && <td className="px-4 py-3">{m.invoiceNumber || '-'}</td>}
                               {type === 'deadstock' && <td className="px-4 py-3">{m.deadstockStatus || '-'}</td>}
+                              {type === 'deadstock' && <td className="px-4 py-3">{m.ketSales || '-'}</td>}
                             </tr>
                           ))
                         )}

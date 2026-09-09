@@ -134,6 +134,7 @@ export default function OutDeadstockPage() {
         pic_id: item.pic_id,
         destination: item.destination,
         notes: item.notes,
+        invoice_number: item.invoice_number,
         total_cost: item.total_cost || 0,
         unit_cost: item.unit_cost || 0
       });
@@ -222,6 +223,7 @@ export default function OutDeadstockPage() {
         quantity: formData.quantity,
         pic_id: formData.pic_id,
         destination: formData.destination || null,
+        invoice_number: formData.invoice_number || null,
         total_cost: totalCost,
         unit_cost: unitCost,
         notes: formData.notes
@@ -314,8 +316,9 @@ export default function OutDeadstockPage() {
                 <th className="px-4 py-2 text-xs border-b border-slate-100 text-right">Total Cost</th>
                 <th className="px-4 py-2 text-xs border-b border-slate-100 text-right">Cost Satuan</th>
                 <th className="px-4 py-2 text-xs border-b border-slate-100">Tujuan</th>
-                <th className="px-4 py-2 text-xs border-b border-slate-100">PIC</th>
-                <th className="px-4 py-2 text-xs border-b border-slate-100">Keterangan</th>
+                <th className="px-4 py-2 text-xs border-b border-slate-100">PIC Sales</th>
+                <th className="px-4 py-2 text-xs border-b border-slate-100">No Invoice</th>
+                <th className="px-4 py-2 text-xs border-b border-slate-100">Ket. Sales</th>
                 <th className="px-4 py-2 text-xs border-b border-slate-100 text-center">Action</th>
               </tr>
             </thead>
@@ -338,6 +341,7 @@ export default function OutDeadstockPage() {
                     <td className="px-4 py-3 text-right">Rp {(item.unit_cost || 0).toLocaleString('id-ID')}</td>
                     <td className="px-4 py-3">{item.destination || '-'}</td>
                     <td className="px-4 py-3">{item.pic?.name || '-'}</td>
+                    <td className="px-4 py-3">{item.invoice_number || '-'}</td>
                     <td className="px-4 py-3 truncate max-w-[150px]">{item.notes || '-'}</td>
                     <td className="px-4 py-3 text-center">
                       <div className="flex items-center justify-center gap-2">
@@ -410,20 +414,21 @@ export default function OutDeadstockPage() {
 
           <Input label="Tujuan Keluar" value={formData.destination || ''} onChange={e => setFormData({ ...formData, destination: e.target.value })} placeholder="Cth: Dibuang, Dijual Murah, dll" />
 
-          <Select label="PIC" required value={formData.pic_id || ''} onChange={e => setFormData({ ...formData, pic_id: e.target.value })}>
+          <Select label="PIC Sales" required value={formData.pic_id || ''} onChange={e => setFormData({ ...formData, pic_id: e.target.value })}>
             <option value="">Pilih PIC</option>
             {pics.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </Select>
+          
+          <Input label="No Invoice" value={formData.invoice_number || ''} onChange={e => setFormData({ ...formData, invoice_number: e.target.value })} placeholder="Cth: INV/OUT/..." />
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Keterangan / Notes</label>
-            <textarea
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
-              rows={2}
-              value={formData.notes || ''}
-              onChange={e => setFormData({ ...formData, notes: e.target.value })}
-            />
-          </div>
+          <Select label="Ket. Sales" value={formData.notes || ''} onChange={e => setFormData({ ...formData, notes: e.target.value })}>
+            <option value="">Pilih Keterangan</option>
+            <option value="Ganti Model">Ganti Model</option>
+            <option value="Cancel Klien">Cancel Klien</option>
+            <option value="Overstock">Overstock</option>
+            <option value="Defect">Defect</option>
+            <option value="Miss Spek">Miss Spek</option>
+          </Select>
 
           <div className="flex justify-end gap-3 mt-6">
             <Button type="button" variant="ghost" onClick={() => setIsFormModalOpen(false)}>Batal</Button>
@@ -469,11 +474,15 @@ export default function OutDeadstockPage() {
               <span className="col-span-2">{viewData.destination || '-'}</span>
             </div>
             <div className="grid grid-cols-3 gap-2 border-b border-slate-100 pb-2">
-              <span className="text-slate-500">PIC</span>
+              <span className="text-slate-500">PIC Sales</span>
               <span className="col-span-2">{viewData.pic?.name || '-'}</span>
             </div>
             <div className="grid grid-cols-3 gap-2 border-b border-slate-100 pb-2">
-              <span className="text-slate-500">Keterangan</span>
+              <span className="text-slate-500">No Invoice</span>
+              <span className="col-span-2">{viewData.invoice_number || '-'}</span>
+            </div>
+            <div className="grid grid-cols-3 gap-2 border-b border-slate-100 pb-2">
+              <span className="text-slate-500">Ket. Sales</span>
               <span className="col-span-2 whitespace-pre-wrap">{viewData.notes || '-'}</span>
             </div>
             <div className="grid grid-cols-3 gap-2">
