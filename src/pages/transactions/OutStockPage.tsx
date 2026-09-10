@@ -68,9 +68,9 @@ export default function OutStockPage() {
       if (parentIds.length > 0) {
         const { data: parents } = await supabase.from('stock_out').select('id, transaction_number').in('id', parentIds);
         if (parents) {
-          finalData = finalData.map(d => {
+          finalData = finalData.map((d: any) => {
             if (d.source_out_stock_id) {
-              const p = parents.find(p => p.id === d.source_out_stock_id);
+              const p = (parents as any[]).find(p => p.id === d.source_out_stock_id);
               if (p) {
                 return { ...d, manual_parent_stock: p };
               }

@@ -91,7 +91,7 @@ export default function ProductsPage() {
       return 'MH-001';
     }
 
-    const lastCode = data[0].product_code;
+    const lastCode = (data as any[])[0].product_code;
     const match = lastCode.match(/MH-(\d+)/);
     if (match && match[1]) {
       const nextNum = parseInt(match[1], 10) + 1;
