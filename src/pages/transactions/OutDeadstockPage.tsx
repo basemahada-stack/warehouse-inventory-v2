@@ -65,11 +65,26 @@ export default function OutDeadstockPage() {
 
   const fetchDependencies = async () => {
     if (!hasSupabaseConfig) return;
-    const [pRes, picRes] = await Promise.all([
+    const [pRes, inRes, outRes, picRes] = await Promise.all([
       supabase.from('products').select('*').eq('is_active', true),
+      supabase.from('deadstock_in').select('product_id, quantity'),
+      supabase.from('deadstock_out').select('product_id, quantity'),
       supabase.from('pics').select('*').eq('is_active', true),
     ]);
-    setProducts(pRes.data || []);
+    
+    const inData = inRes.data || [];
+    const outData = outRes.data || [];
+    const productsData = pRes.data || [];
+    
+    const availableProducts = productsData.filter(p => {
+        const dsInTotal = inData.filter(s => s.product_id === p.id).reduce((sum, s) => sum + s.quantity, 0);
+        const dsOutTotal = outData.filter(s => s.product_id === p.id).reduce((sum, s) => sum + s.quantity, 0);
+        const dsStock = dsInTotal - dsOutTotal;
+        
+        return dsStock > 0;
+    });
+    
+    setProducts(availableProducts);
     setPics(picRes.data || []);
   };
 

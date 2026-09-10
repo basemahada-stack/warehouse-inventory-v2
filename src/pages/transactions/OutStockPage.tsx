@@ -94,13 +94,33 @@ export default function OutStockPage() {
       });
       return;
     }
-    const [pRes, rRes, picRes, vRes] = await Promise.all([
+    const [pRes, inRes, outRes, rRes, picRes, vRes] = await Promise.all([
       supabase.from('products').select('*').eq('is_active', true),
+      supabase.from('stock_in').select('product_id, quantity'),
+      supabase.from('stock_out').select('product_id, quantity, source_out_stock_id, vendor_id'),
       supabase.from('out_stock_reasons').select('*').eq('is_active', true),
       supabase.from('pics').select('*').eq('is_active', true),
       supabase.from('vendors').select('*').eq('is_active', true),
     ]);
-    setProducts(pRes.data || []);
+    
+    const inData = inRes.data || [];
+    const outData = outRes.data || [];
+    const productsData = pRes.data || [];
+    
+    const availableProducts = productsData.filter(p => {
+        const totalIn = inData.filter(s => s.product_id === p.id).reduce((sum, s) => sum + s.quantity, 0);
+        const outFromGudang = outData.filter(s => s.product_id === p.id && !s.source_out_stock_id).reduce((sum, s) => sum + s.quantity, 0);
+        const outToVendor = outData.filter(s => s.product_id === p.id && s.vendor_id).reduce((sum, s) => sum + s.quantity, 0);
+        const outFromVendor = outData.filter(s => s.product_id === p.id && s.source_out_stock_id).reduce((sum, s) => sum + s.quantity, 0);
+        
+        const gudangStock = totalIn - outFromGudang;
+        const vStock = outToVendor - outFromVendor;
+        const totalInventory = gudangStock + vStock;
+        
+        return totalInventory > 0;
+    });
+    
+    setProducts(availableProducts);
     setReasons(rRes.data || []);
     setPics(picRes.data || []);
     setVendors(vRes.data || []);

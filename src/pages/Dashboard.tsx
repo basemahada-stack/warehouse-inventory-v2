@@ -65,6 +65,8 @@ export default function Dashboard() {
         const vStock = outToVendor - outFromVendor;
         const totalInventory = gudangStock + vStock;
         
+        const hasRegularHistory = totalIn > 0 || outFromGudang > 0 || outToVendor > 0 || outFromVendor > 0;
+        
         let status = 'AMAN';
         if (gudangStock <= 0) status = 'HABIS';
         else if (gudangStock <= (p.minimum_stock || 0)) status = 'MENIPIS';
@@ -76,7 +78,8 @@ export default function Dashboard() {
           totalInventory,
           dsStock,
           status,
-          hasHistory: totalIn > 0 || outFromGudang > 0 || outToVendor > 0 || outFromVendor > 0 || dsInTotal > 0 || dsOutTotal > 0
+          hasHistory: hasRegularHistory || dsInTotal > 0 || dsOutTotal > 0,
+          hasRegularHistory
         };
       }).filter(item => item.hasHistory);
 
@@ -101,8 +104,8 @@ export default function Dashboard() {
       totalInventory: inventory.reduce((sum, i) => sum + i.totalInventory, 0),
       totalDeadstock: inventory.reduce((sum, i) => sum + (i.dsStock || 0), 0),
       totalProducts: inventory.length,
-      lowStock: inventory.filter(i => i.status === 'MENIPIS').length,
-      outOfStock: inventory.filter(i => i.status === 'HABIS').length,
+      lowStock: inventory.filter(i => i.status === 'MENIPIS' && i.hasRegularHistory).length,
+      outOfStock: inventory.filter(i => i.status === 'HABIS' && i.hasRegularHistory).length,
     };
   }, [inventory]);
 
@@ -177,7 +180,7 @@ export default function Dashboard() {
   // 4. Chart: Stock Status Pie
   const statusPieData = useMemo(() => {
     return [
-      { name: 'AMAN', value: inventory.filter(i => i.status === 'AMAN').length },
+      { name: 'AMAN', value: inventory.filter(i => i.status === 'AMAN' && i.hasRegularHistory).length },
       { name: 'MENIPIS', value: stats.lowStock },
       { name: 'HABIS', value: stats.outOfStock },
     ].filter(d => d.value > 0);
@@ -226,7 +229,7 @@ export default function Dashboard() {
   }, [stockIn, stockOut]);
 
   const lowStockProducts = useMemo(() => {
-    return inventory.filter(i => i.status === 'HABIS' || i.status === 'MENIPIS')
+    return inventory.filter(i => (i.status === 'HABIS' || i.status === 'MENIPIS') && i.hasRegularHistory)
       .sort((a, b) => a.gudangStock - b.gudangStock);
   }, [inventory]);
 

@@ -12,7 +12,7 @@ export default function FinanceRecapPage() {
   // Filters
   const [search, setSearch] = useState('');
   const [dateFilter, setDateFilter] = useState('');
-  const [statusFilter, setStatusFilter] = useState(''); // '' | 'checked' | 'unchecked'
+  const [statusFilter, setStatusFilter] = useState('unchecked'); // '' | 'checked' | 'unchecked'
   
   // Pagination
   const [page, setPage] = useState(1);
