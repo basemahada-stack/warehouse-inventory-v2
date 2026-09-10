@@ -6,6 +6,7 @@ import InventoryPage from './pages/InventoryPage';
 import InStockPage from './pages/transactions/InStockPage';
 import InDeadstockPage from './pages/transactions/InDeadstockPage';
 import OutDeadstockPage from './pages/transactions/OutDeadstockPage';
+import PreviewDeadstockPage from './pages/PreviewDeadstockPage';
 import OutStockPage from './pages/transactions/OutStockPage';
 import VendorStockPage from './pages/transactions/VendorStockPage';
 import ProductsPage from './pages/settings/ProductsPage';
@@ -31,6 +32,7 @@ export default function App() {
           <Route path="deadstock/in" element={<InDeadstockPage />} />
           <Route path="deadstock/out" element={<OutDeadstockPage />} />
           <Route path="deadstock/inventory" element={<InventoryPage type="deadstock" />} />
+          <Route path="deadstock/preview" element={<PreviewDeadstockPage />} />
           <Route path="in-stock" element={<InStockPage />} />
           <Route path="out-stock" element={<OutStockPage />} />
           <Route path="vendor-stock" element={<VendorStockPage />} />

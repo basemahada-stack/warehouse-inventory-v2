@@ -40,7 +40,8 @@ const sidebarMenus = [
     subMenus: [
       { path: '/deadstock/in', label: 'In Deadstock' },
       { path: '/deadstock/out', label: 'Out Deadstock' },
-      { path: '/deadstock/inventory', label: 'Inventory Deadstock' }
+      { path: '/deadstock/inventory', label: 'Inventory Deadstock' },
+      { path: '/deadstock/preview', label: 'Preview Deadstock' }
     ]
   },
   { path: '/vendor-stock', icon: Warehouse, label: 'Vendor Stock' },

@@ -33,6 +33,8 @@ export default function InDeadstockPage() {
   const [formData, setFormData] = useState<any>({});
   const [viewData, setViewData] = useState<any>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
   const fetchData = async () => {
     if (!hasSupabaseConfig) {
@@ -105,13 +107,25 @@ export default function InDeadstockPage() {
         total_cost: item.total_cost || 0,
         notes: item.notes,
         invoice_number: item.invoice_number,
-        deadstock_status: item.deadstock_status
+        deadstock_status: item.deadstock_status,
+        photo_url: item.photo_url
       });
+      setPhotoPreview(item.photo_url || null);
     } else {
       setEditingId(null);
       setFormData({ transaction_date: format(new Date(), 'yyyy-MM-dd') });
+      setPhotoPreview(null);
     }
+    setPhotoFile(null);
     setIsFormModalOpen(true);
+  };
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setPhotoFile(file);
+      setPhotoPreview(URL.createObjectURL(file));
+    }
   };
 
   const handleView = (item: any) => {
@@ -171,6 +185,26 @@ export default function InDeadstockPage() {
     setSubmitting(true);
     
     try {
+      let finalPhotoUrl = formData.photo_url;
+
+      if (photoFile) {
+        const fileExt = photoFile.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const filePath = `${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('deadstock-photos')
+          .upload(filePath, photoFile);
+
+        if (uploadError) throw uploadError;
+
+        const { data: publicUrlData } = supabase.storage
+          .from('deadstock-photos')
+          .getPublicUrl(filePath);
+
+        finalPhotoUrl = publicUrlData.publicUrl;
+      }
+
       const payload = {
         transaction_date: formData.transaction_date,
         product_id: formData.product_id,
@@ -181,7 +215,8 @@ export default function InDeadstockPage() {
         unit_cost: (formData.total_cost || 0) / (formData.quantity || 1),
         notes: formData.notes,
         invoice_number: formData.invoice_number || null,
-        deadstock_status: formData.deadstock_status || null
+        deadstock_status: formData.deadstock_status || null,
+        photo_url: finalPhotoUrl
       };
 
       if (editingId) {
@@ -385,6 +420,25 @@ export default function InDeadstockPage() {
             <option value="Miss Spek">Miss Spek</option>
           </Select>
 
+          <div className="space-y-1">
+            <label className="block text-sm font-medium text-gray-700">Foto Deadstock (Opsional)</label>
+            <div className="flex items-center gap-4">
+              <div className="flex-1">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoChange}
+                  className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
+                />
+              </div>
+              {photoPreview && (
+                <div className="w-16 h-16 rounded-lg border border-slate-200 overflow-hidden bg-slate-50 shrink-0 shadow-sm">
+                  <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
+                </div>
+              )}
+            </div>
+          </div>
+
           <div className="flex justify-end gap-3 mt-6">
             <Button type="button" variant="ghost" onClick={() => setIsFormModalOpen(false)}>Batal</Button>
             <Button type="submit" disabled={submitting}>{submitting ? 'Menyimpan...' : 'Simpan'}</Button>
@@ -396,6 +450,11 @@ export default function InDeadstockPage() {
       <Modal isOpen={isViewModalOpen} onClose={() => setIsViewModalOpen(false)} title="Detail Transaksi IN Deadstock">
         {viewData && (
           <div className="space-y-4 text-sm">
+            {viewData.photo_url && (
+              <div className="mb-4 rounded-lg overflow-hidden border border-slate-200 bg-slate-50 flex justify-center">
+                <img src={viewData.photo_url} alt="Deadstock" className="max-h-64 object-contain" />
+              </div>
+            )}
             <div className="grid grid-cols-3 gap-2 border-b border-slate-100 pb-2">
               <span className="text-slate-500">Nomor Transaksi</span>
               <span className="col-span-2 font-mono font-bold text-slate-800">{viewData.transaction_number}</span>
