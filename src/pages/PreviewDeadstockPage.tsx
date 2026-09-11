@@ -135,7 +135,7 @@ export default function PreviewDeadstockPage() {
           <p>Tidak ada foto deadstock yang ditemukan.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-4">
           {filteredData.map((item) => (
             <div key={item.id} className="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow overflow-hidden group flex flex-col">
               <div className="relative aspect-square bg-slate-100 overflow-hidden">
@@ -154,17 +154,17 @@ export default function PreviewDeadstockPage() {
                   <Box className="w-3 h-3 text-indigo-500" /> {item.remaining_qty}
                 </div>
               </div>
-              <div className="p-4 flex-1 flex flex-col justify-between">
+              <div className="p-3 flex-1 flex flex-col justify-between">
                 <div>
-                  <h3 className="font-bold text-slate-800 line-clamp-2 mb-1" title={item.product?.product_name}>
+                  <h3 className="text-sm font-bold text-slate-800 line-clamp-2 mb-1" title={item.product?.product_name}>
                     {item.product?.product_name || 'Unknown Product'}
                   </h3>
-                  <p className="text-[11px] text-slate-500 font-mono mb-3">{item.transaction_number}</p>
+                  <p className="text-[10px] text-slate-500 font-mono mb-2">{item.transaction_number}</p>
                 </div>
                 <div>
-                  <div className="flex justify-between items-end border-t border-slate-100 pt-3 mt-2">
-                    <div className="text-xs text-slate-500">Harga Satuan</div>
-                    <div className="font-bold text-indigo-600">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end border-t border-slate-100 pt-2 mt-2 gap-1">
+                    <div className="text-[11px] text-slate-500">Harga Satuan</div>
+                    <div className="text-sm font-bold text-indigo-600">
                       Rp {(item.unit_cost || 0).toLocaleString('id-ID')}
                     </div>
                   </div>
