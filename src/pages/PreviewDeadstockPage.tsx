@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { supabase, hasSupabaseConfig } from '../lib/supabase';
 import { Card, Input, Select } from '../components/ui';
-import { Search, Loader2, Image as ImageIcon, Box } from 'lucide-react';
+import { Search, Loader2, Image as ImageIcon, Box, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function PreviewDeadstockPage() {
@@ -10,6 +10,7 @@ export default function PreviewDeadstockPage() {
   const [search, setSearch] = useState('');
   const [products, setProducts] = useState<any[]>([]);
   const [productFilter, setProductFilter] = useState('');
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   const fetchData = async () => {
     if (!hasSupabaseConfig) {
@@ -143,7 +144,8 @@ export default function PreviewDeadstockPage() {
                   <img 
                     src={item.photo_url} 
                     alt={item.product?.product_name || 'Deadstock'} 
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 cursor-pointer"
+                    onClick={() => setSelectedImage(item.photo_url)}
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-slate-300">
@@ -172,6 +174,29 @@ export default function PreviewDeadstockPage() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Image Modal */}
+      {selectedImage && (
+        <div 
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 sm:p-8"
+          onClick={() => setSelectedImage(null)}
+        >
+          <div className="relative max-w-5xl w-full h-full flex items-center justify-center">
+            <button 
+              className="absolute top-4 right-4 p-2 text-white/70 hover:text-white bg-black/40 hover:bg-black/60 rounded-full backdrop-blur-md transition-colors z-10"
+              onClick={() => setSelectedImage(null)}
+            >
+              <X className="w-6 h-6" />
+            </button>
+            <img 
+              src={selectedImage} 
+              alt="Preview" 
+              className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
         </div>
       )}
     </div>
