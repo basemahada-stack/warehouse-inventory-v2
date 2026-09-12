@@ -24,7 +24,6 @@ export default function PreviewDeadstockPage() {
       const { data: inData, error: inError } = await supabase
         .from('deadstock_in')
         .select('*, product:products(product_name)')
-        .not('photo_url', 'is', null)
         .order('created_at', { ascending: false });
 
       if (inError) throw inError;
@@ -148,8 +147,8 @@ export default function PreviewDeadstockPage() {
                     onClick={() => setSelectedImage(item.photo_url)}
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-slate-300">
-                    <ImageIcon className="w-12 h-12" />
+                  <div className="w-full h-full flex items-center justify-center bg-gray-200 text-gray-500 font-bold text-4xl">
+                    NA
                   </div>
                 )}
                 <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded text-xs font-bold text-slate-700 shadow-sm flex items-center gap-1 border border-slate-200">
@@ -161,7 +160,12 @@ export default function PreviewDeadstockPage() {
                   <h3 className="text-sm font-bold text-slate-800 line-clamp-2 mb-1" title={item.product?.product_name}>
                     {item.product?.product_name || 'Unknown Product'}
                   </h3>
-                  <p className="text-[10px] text-slate-500 font-mono mb-2">{item.transaction_number}</p>
+                  <p className="text-[10px] text-slate-500 font-mono mb-1">{item.transaction_number}</p>
+                  {item.deadstock_status && (
+                    <span className="inline-block text-[10px] px-1.5 py-0.5 bg-slate-100 text-slate-600 border border-slate-200 rounded mb-2">
+                      {item.deadstock_status}
+                    </span>
+                  )}
                 </div>
                 <div>
                   <div className="flex justify-between items-center border-t border-slate-100 pt-3 mt-2">
