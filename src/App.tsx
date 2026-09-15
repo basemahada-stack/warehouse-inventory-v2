@@ -29,6 +29,7 @@ export default function App() {
           <Route path="inventory/stock" element={<InventoryPage type="stock" />} />
           <Route path="inventory/warehouse" element={<InventoryPage type="warehouse" />} />
           <Route path="inventory/cloudpop" element={<InventoryPage type="cloudpop" />} />
+          <Route path="inventory/marketing" element={<InventoryPage type="marketing" />} />
           <Route path="deadstock/in" element={<InDeadstockPage />} />
           <Route path="deadstock/out" element={<OutDeadstockPage />} />
           <Route path="deadstock/inventory" element={<InventoryPage type="deadstock" />} />

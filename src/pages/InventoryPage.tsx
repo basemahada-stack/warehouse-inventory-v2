@@ -4,7 +4,7 @@ import { Card, Button, Input, Modal, Select } from '../components/ui';
 import { Search, Loader2, Eye, Box, AlertTriangle, PackageX, PackageCheck, List, ArrowDownRight, ArrowUpRight, DollarSign } from 'lucide-react';
 import { format } from 'date-fns';
 
-export default function InventoryPage({ type = 'stock' }: { type?: 'stock' | 'warehouse' | 'deadstock' | 'cloudpop' }) {
+export default function InventoryPage({ type = 'stock' }: { type?: 'stock' | 'warehouse' | 'deadstock' | 'cloudpop' | 'marketing' }) {
   const [inventory, setInventory] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);

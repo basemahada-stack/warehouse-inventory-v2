@@ -30,7 +30,8 @@ const sidebarMenus = [
     subMenus: [
       { path: '/inventory/stock', label: 'Stock' },
       { path: '/inventory/warehouse', label: 'Warehouse' },
-      { path: '/inventory/cloudpop', label: 'Cloudpop' }
+      { path: '/inventory/cloudpop', label: 'Cloudpop' },
+      { path: '/inventory/marketing', label: 'Marketing' }
     ]
   },
   { 
