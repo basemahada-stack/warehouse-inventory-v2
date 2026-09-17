@@ -12,7 +12,8 @@ import {
   AlertTriangle,
   ChevronDown,
   ChevronUp,
-  Calculator
+  Calculator,
+  Download
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { cn } from '../lib/utils';
@@ -80,10 +81,36 @@ const LiveClock = () => {
 export default function Layout() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const location = useLocation();
+  const [installPrompt, setInstallPrompt] = useState<any>(null);
+  const [isInstallable, setIsInstallable] = useState(false);
   const [expandedMenu, setExpandedMenu] = useState<string | null>(
     location.pathname.startsWith('/inventory') ? '/inventory' : 
     location.pathname.startsWith('/deadstock') ? '/deadstock' : null
   );
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: any) => {
+      e.preventDefault();
+      setInstallPrompt(e);
+      setIsInstallable(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    const { outcome } = await installPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setIsInstallable(false);
+    }
+    setInstallPrompt(null);
+  };
 
   const toggleSubmenu = (path: string) => {
     setExpandedMenu(expandedMenu === path ? null : path);
@@ -168,6 +195,15 @@ export default function Layout() {
       </nav>
 
       <div className="p-4 border-t border-slate-800">
+        {isInstallable && (
+          <button
+            onClick={handleInstallClick}
+            className="flex items-center gap-3 px-3 py-2 w-full rounded-md cursor-pointer transition-colors hover:bg-slate-800 text-indigo-400 hover:text-indigo-300 mb-2 border border-slate-700/50"
+          >
+            <Download className="w-4 h-4" />
+            <span className="text-sm font-medium">Instal Aplikasi</span>
+          </button>
+        )}
         <div className="flex items-center gap-3 px-3 py-2">
           <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-white font-bold text-xs">
             AD
