@@ -127,9 +127,11 @@ export default function Layout() {
   const SidebarContent = () => (
     <div className="h-full flex flex-col bg-[#0f172a] text-slate-400">
       <div className="p-6 flex items-center gap-3 border-b border-slate-800">
-        <div className="w-8 h-8 bg-indigo-500 rounded flex items-center justify-center text-white font-bold">
-          W
-        </div>
+        <img 
+          src="/logo.jpeg" 
+          alt="MIM Logo" 
+          className="w-10 h-10 rounded-lg object-cover bg-white p-0.5"
+        />
         <div className="flex flex-col">
           <span className="text-indigo-200 font-bold tracking-[0.2em] text-[9px] leading-none mb-1 uppercase">MANAGEMENT</span>
           <span className="text-white font-bold text-[15px] leading-none tracking-tight">Inventory Mahada</span>
