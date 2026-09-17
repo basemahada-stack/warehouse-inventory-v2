@@ -82,17 +82,21 @@ export default function Layout() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const location = useLocation();
   const [installPrompt, setInstallPrompt] = useState<any>(null);
-  const [isInstallable, setIsInstallable] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
   const [expandedMenu, setExpandedMenu] = useState<string | null>(
     location.pathname.startsWith('/inventory') ? '/inventory' : 
     location.pathname.startsWith('/deadstock') ? '/deadstock' : null
   );
 
   useEffect(() => {
+    // Check if already installed/standalone
+    if (window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone) {
+      setIsStandalone(true);
+    }
+
     const handleBeforeInstallPrompt = (e: any) => {
       e.preventDefault();
       setInstallPrompt(e);
-      setIsInstallable(true);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -103,13 +107,17 @@ export default function Layout() {
   }, []);
 
   const handleInstallClick = async () => {
-    if (!installPrompt) return;
-    installPrompt.prompt();
-    const { outcome } = await installPrompt.userChoice;
-    if (outcome === 'accepted') {
-      setIsInstallable(false);
+    if (installPrompt) {
+      installPrompt.prompt();
+      const { outcome } = await installPrompt.userChoice;
+      if (outcome === 'accepted') {
+        setIsStandalone(true);
+      }
+      setInstallPrompt(null);
+    } else {
+      // Fallback message for desktop/laptop if prompt isn't caught
+      alert("Untuk menginstal di Laptop/PC:\n\n1. Jika Anda menggunakan Chrome/Edge, klik ikon 'Install' (layar dengan tanda panah) di pojok kanan address bar URL Anda.\n2. Atau klik menu (titik tiga) di pojok kanan atas browser, lalu pilih 'Install App'.\n\nCatatan: Pastikan Anda membuka web ini via HTTPS atau localhost.");
     }
-    setInstallPrompt(null);
   };
 
   const toggleSubmenu = (path: string) => {
@@ -195,7 +203,7 @@ export default function Layout() {
       </nav>
 
       <div className="p-4 border-t border-slate-800">
-        {isInstallable && (
+        {!isStandalone && (
           <button
             onClick={handleInstallClick}
             className="flex items-center gap-3 px-3 py-2 w-full rounded-md cursor-pointer transition-colors hover:bg-slate-800 text-indigo-400 hover:text-indigo-300 mb-2 border border-slate-700/50"
