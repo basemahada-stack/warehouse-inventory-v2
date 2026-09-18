@@ -94,50 +94,6 @@ export default function PreviewDeadstockPage() {
     });
   }, [data, search, productFilter]);
 
-  const stats = useMemo(() => {
-    let totalProduk = new Set();
-    let nilaiAsset = 0;
-    let gantiModel = 0;
-    let overstock = 0;
-    let cancelKlien = 0;
-    let defect = 0;
-    let missSpek = 0;
-
-    filteredData.forEach(item => {
-      totalProduk.add(item.product_id);
-      const qty = item.remaining_qty || 0;
-      const cost = item.unit_cost || 0;
-      const total = qty * cost;
-
-      nilaiAsset += total;
-
-      const status = (item.deadstock_status || '').toLowerCase();
-      if (status.includes('ganti model')) gantiModel += total;
-      else if (status.includes('overstock')) overstock += total;
-      else if (status.includes('cancel klien')) cancelKlien += total;
-      else if (status.includes('defect')) defect += total;
-      else if (status.includes('miss spek')) missSpek += total;
-    });
-
-    return {
-      totalProduk: totalProduk.size,
-      nilaiAsset,
-      gantiModel,
-      overstock,
-      cancelKlien,
-      defect,
-      missSpek
-    };
-  }, [filteredData]);
-
-  const formatCurrency = (val: number) => {
-    if (val === 0) return '0';
-    if (val >= 1000000) {
-      return (val / 1000000).toLocaleString('id-ID', { maximumFractionDigits: 1 }) + ' Jt';
-    }
-    return val.toLocaleString('id-ID');
-  };
-
   if (!hasSupabaseConfig) return null;
 
   return (
@@ -149,38 +105,6 @@ export default function PreviewDeadstockPage() {
             Preview Deadstock
           </h1>
           <p className="text-gray-500 text-sm mt-1">Galeri foto dan informasi sisa stok barang deadstock</p>
-        </div>
-      </div>
-
-      {/* Statistic Cards */}
-      <div className="flex flex-nowrap overflow-x-auto gap-3 pb-2 sm:pb-0 hide-scrollbar scroll-smooth">
-        <div className="min-w-[130px] flex-1 bg-white border border-slate-200 rounded-xl p-3 shadow-sm flex flex-col justify-center">
-          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Total Produk</span>
-          <span className="text-xl font-bold text-slate-800">{stats.totalProduk}</span>
-        </div>
-        <div className="min-w-[130px] flex-1 bg-[#f2fbf8] border border-[#d1f4e5] rounded-xl p-3 shadow-sm flex flex-col justify-center">
-          <span className="text-[10px] font-bold text-teal-600 uppercase tracking-wider mb-1">$ Nilai Asset</span>
-          <span className="text-xl font-bold text-teal-900">{formatCurrency(stats.nilaiAsset)}</span>
-        </div>
-        <div className="min-w-[130px] flex-1 bg-[#f0f7ff] border border-[#dcecfe] rounded-xl p-3 shadow-sm flex flex-col justify-center">
-          <span className="text-[10px] font-bold text-blue-500 uppercase tracking-wider mb-1">Ganti Model</span>
-          <span className="text-xl font-bold text-blue-900">{formatCurrency(stats.gantiModel)}</span>
-        </div>
-        <div className="min-w-[130px] flex-1 bg-[#f5f3ff] border border-[#ede9fe] rounded-xl p-3 shadow-sm flex flex-col justify-center">
-          <span className="text-[10px] font-bold text-indigo-500 uppercase tracking-wider mb-1">Overstock</span>
-          <span className="text-xl font-bold text-indigo-900">{formatCurrency(stats.overstock)}</span>
-        </div>
-        <div className="min-w-[130px] flex-1 bg-[#fffdf0] border border-[#fef3c7] rounded-xl p-3 shadow-sm flex flex-col justify-center">
-          <span className="text-[10px] font-bold text-amber-600 uppercase tracking-wider mb-1">Cancel Klien</span>
-          <span className="text-xl font-bold text-amber-900">{formatCurrency(stats.cancelKlien)}</span>
-        </div>
-        <div className="min-w-[130px] flex-1 bg-[#fff1f2] border border-[#ffe4e6] rounded-xl p-3 shadow-sm flex flex-col justify-center">
-          <span className="text-[10px] font-bold text-rose-500 uppercase tracking-wider mb-1">Defect</span>
-          <span className="text-xl font-bold text-rose-900">{formatCurrency(stats.defect)}</span>
-        </div>
-        <div className="min-w-[130px] flex-1 bg-[#faf5ff] border border-[#f3e8ff] rounded-xl p-3 shadow-sm flex flex-col justify-center">
-          <span className="text-[10px] font-bold text-purple-500 uppercase tracking-wider mb-1">Miss Spek</span>
-          <span className="text-xl font-bold text-purple-900">{formatCurrency(stats.missSpek)}</span>
         </div>
       </div>
 
