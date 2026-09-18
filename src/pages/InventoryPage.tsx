@@ -27,6 +27,28 @@ export default function InventoryPage({ type = 'stock' }: { type?: 'stock' | 'wa
   const [movementLoading, setMovementLoading] = useState(false);
   const [movements, setMovements] = useState<any[]>([]);
 
+  const fetchAll = async (queryFn: () => any) => {
+    let allData: any[] = [];
+    let page = 0;
+    const pageSize = 1000;
+    
+    while (true) {
+      const { data, error } = await queryFn().range(page * pageSize, (page + 1) * pageSize - 1);
+      if (error) {
+        console.error(error);
+        break;
+      }
+      if (data && data.length > 0) {
+        allData = [...allData, ...data];
+        if (data.length < pageSize) break;
+      } else {
+        break;
+      }
+      page++;
+    }
+    return allData;
+  };
+
   const fetchInventory = async () => {
     if (!hasSupabaseConfig) {
       import('../lib/mockData').then((mock) => {
@@ -40,22 +62,17 @@ export default function InventoryPage({ type = 'stock' }: { type?: 'stock' | 'wa
     setLoading(true);
     
     // Fetch all required data to calculate inventory
-    const [productsRes, inRes, outRes, catRes] = await Promise.all([
-      supabase.from('products').select('*, category:categories(id, name), unit:units(id, name)'),
-      supabase.from(type === 'deadstock' ? 'deadstock_in' : 'stock_in').select(
+    const [products, stockIn, stockOut, categories] = await Promise.all([
+      fetchAll(() => supabase.from('products').select('*, category:categories(id, name), unit:units(id, name)')),
+      fetchAll(() => supabase.from(type === 'deadstock' ? 'deadstock_in' : 'stock_in').select(
         type === 'deadstock' ? 'id, product_id, quantity, total_cost, unit_cost, notes' : 'id, product_id, quantity, total_cost, unit_cost, reason:in_stock_reasons(name)'
-      ),
-      supabase.from(type === 'deadstock' ? 'deadstock_out' : 'stock_out').select(
+      )),
+      fetchAll(() => supabase.from(type === 'deadstock' ? 'deadstock_out' : 'stock_out').select(
         type === 'deadstock' ? 'id, product_id, quantity, deadstock_in_id, unit_cost' : 'id, product_id, quantity, vendor_id, source_out_stock_id, stock_in_id, unit_cost, stock_in:stock_in(reason:in_stock_reasons(name))'
-      ),
-      supabase.from('categories').select('*').eq('is_active', true)
+      )),
+      fetchAll(() => supabase.from('categories').select('*').eq('is_active', true))
     ]);
-
-    setCategories(catRes.data || []);
-
-    const products = productsRes.data || [];
-    const stockIn = inRes.data || [];
-    const stockOut = outRes.data || [];
+    setCategories(categories || []);
 
     // Calculate per product
     const calculated = products.map(product => {
@@ -139,7 +156,10 @@ export default function InventoryPage({ type = 'stock' }: { type?: 'stock' | 'wa
         status,
         hasHistory
       };
-    }).filter(item => item.hasHistory);
+    }).filter(item => {
+      if (type === 'deadstock' && item.gudangStock <= 0) return false;
+      return item.hasHistory;
+    });
 
     setInventory(calculated);
     setLoading(false);
@@ -162,18 +182,18 @@ export default function InventoryPage({ type = 'stock' }: { type?: 'stock' | 'wa
       return;
     }
     try {
-      const [inRes, outRes] = await Promise.all([
-        supabase.from(type === 'deadstock' ? 'deadstock_in' : 'stock_in').select(
+      const [inData, outData] = await Promise.all([
+        fetchAll(() => supabase.from(type === 'deadstock' ? 'deadstock_in' : 'stock_in').select(
           type === 'deadstock' ? '*, pic:pics(name)' : '*, pic:pics(name), reason:in_stock_reasons(name)'
-        ).eq('product_id', productId),
-        supabase.from(type === 'deadstock' ? 'deadstock_out' : 'stock_out').select(
+        ).eq('product_id', productId)),
+        fetchAll(() => supabase.from(type === 'deadstock' ? 'deadstock_out' : 'stock_out').select(
           type === 'deadstock' ? '*, pic:pics(name), deadstock_in:deadstock_in(deadstock_status)' : '*, pic:pics(name), vendor:vendors(name), stock_in:stock_in(deadstock_status, reason:in_stock_reasons(name))'
-        ).eq('product_id', productId)
+        ).eq('product_id', productId))
       ]);
 
       const moves: any[] = [];
       
-      (inRes.data || []).forEach(item => {
+      (inData || []).forEach(item => {
         if (type !== 'deadstock' && (item.reason?.name || '').toLowerCase() !== type.toLowerCase()) return;
         moves.push({
           id: item.id,
@@ -189,7 +209,7 @@ export default function InventoryPage({ type = 'stock' }: { type?: 'stock' | 'wa
         });
       });
 
-      (outRes.data || []).forEach(item => {
+      (outData || []).forEach(item => {
         if (type === 'deadstock') {
           moves.push({
             id: item.id,

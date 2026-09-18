@@ -43,16 +43,18 @@ export default function PreviewDeadstockPage() {
       }
 
       // 3. Process data
-      const processedData = (inData || []).map(batch => {
-        const outQty = outData
-          .filter(out => out.deadstock_in_id === batch.id)
-          .reduce((sum, out) => sum + (out.quantity || 0), 0);
-        
-        return {
-          ...batch,
-          remaining_qty: batch.quantity - outQty
-        };
-      });
+      const processedData = (inData || [])
+        .map(batch => {
+          const outQty = outData
+            .filter(out => out.deadstock_in_id === batch.id)
+            .reduce((sum, out) => sum + (out.quantity || 0), 0);
+          
+          return {
+            ...batch,
+            remaining_qty: batch.quantity - outQty
+          };
+        })
+        .filter(batch => batch.remaining_qty > 0);
 
       setData(processedData);
 
