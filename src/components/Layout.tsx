@@ -225,15 +225,6 @@ export default function Layout() {
       </nav>
 
       <div className="p-4 border-t border-slate-800">
-        {!isStandalone && (
-          <button
-            onClick={handleInstallClick}
-            className="flex items-center gap-3 px-3 py-2 w-full rounded-md cursor-pointer transition-colors hover:bg-slate-800 text-indigo-400 hover:text-indigo-300 mb-2 border border-slate-700/50"
-          >
-            <Download className="w-4 h-4" />
-            <span className="text-sm font-medium">Instal Aplikasi</span>
-          </button>
-        )}
         <div className="flex items-center gap-3 px-3 py-2">
           <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-white font-bold text-xs">
             AD
