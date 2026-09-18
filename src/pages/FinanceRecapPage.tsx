@@ -20,51 +20,105 @@ export default function FinanceRecapPage() {
   const [totalRows, setTotalRows] = useState(0);
   const pageSize = 15;
 
+  const fetchAll = async (queryFn: () => any) => {
+    let allData: any[] = [];
+    let p = 0;
+    const ps = 1000;
+    while (true) {
+      const { data, error } = await queryFn().range(p * ps, (p + 1) * ps - 1);
+      if (error) {
+        console.error(error);
+        break;
+      }
+      if (data && data.length > 0) {
+        allData = [...allData, ...data];
+        if (data.length < ps) break;
+      } else {
+        break;
+      }
+      p++;
+    }
+    return allData;
+  };
+
   const fetchData = async (isBackground = false) => {
     if (!hasSupabaseConfig) {
       if (!isBackground) setLoading(false);
       return;
     }
     if (!isBackground) setLoading(true);
-    let query = supabase.from('stock_out')
-      .select('*, product:products(product_name), reason:out_stock_reasons!inner(name), pic:pics(name), vendor:vendors(name), stock_in:stock_in(transaction_number)', { count: 'exact' })
-      .ilike('reason.name', '%konsumen%')
-      .order('transaction_date', { ascending: false })
-      .order('created_at', { ascending: false });
-      
-    if (search) query = query.ilike('transaction_number', `%${search}%`);
-    if (dateFilter) query = query.eq('transaction_date', dateFilter);
-    if (statusFilter === 'checked') query = query.eq('is_checked_finance', true);
-    if (statusFilter === 'unchecked') query = query.is('is_checked_finance', false); // Can be false or null
-    
-    const from = (page - 1) * pageSize;
-    const to = from + pageSize - 1;
-    query = query.range(from, to);
-    
-    const { data: resultData, count, error } = await query;
-    if (error) { 
-      console.error(error); 
-      toast.error('Terjadi kesalahan. Silakan coba kembali.'); 
-    } else {
-      let finalData = resultData || [];
-      const parentIds = finalData.filter(d => d.source_out_stock_id).map(d => d.source_out_stock_id);
+
+    try {
+      // 1. Query stock_out
+      const getStockOutQuery = () => {
+        let q = supabase.from('stock_out')
+          .select('*, product:products(product_name), reason:out_stock_reasons!inner(name), pic:pics(name), vendor:vendors(name), stock_in:stock_in(transaction_number)');
+        
+        q = q.ilike('reason.name', '%konsumen%');
+        if (search) q = q.ilike('transaction_number', `%${search}%`);
+        if (dateFilter) q = q.eq('transaction_date', dateFilter);
+        if (statusFilter === 'checked') q = q.eq('is_checked_finance', true);
+        if (statusFilter === 'unchecked') q = q.is('is_checked_finance', false);
+        return q;
+      };
+
+      // 2. Query deadstock_out
+      const getDeadstockOutQuery = () => {
+        let q = supabase.from('deadstock_out')
+          .select('*, product:products(product_name), pic:pics(name), deadstock_in:deadstock_in(transaction_number)');
+        
+        if (search) q = q.ilike('transaction_number', `%${search}%`);
+        if (dateFilter) q = q.eq('transaction_date', dateFilter);
+        if (statusFilter === 'checked') q = q.eq('is_checked_finance', true);
+        if (statusFilter === 'unchecked') q = q.is('is_checked_finance', false);
+        return q;
+      };
+
+      const [stockOutData, deadstockOutData] = await Promise.all([
+        fetchAll(getStockOutQuery),
+        fetchAll(getDeadstockOutQuery)
+      ]);
+
+      let combinedData = [
+        ...stockOutData.map(d => ({ ...d, table_source: 'stock_out' })),
+        ...deadstockOutData.map(d => ({ ...d, table_source: 'deadstock_out' }))
+      ];
+
+      // Fetch manual parent stock if needed
+      const parentIds = combinedData.filter(d => d.source_out_stock_id).map(d => d.source_out_stock_id);
       if (parentIds.length > 0) {
         const { data: parents } = await supabase.from('stock_out').select('id, transaction_number').in('id', parentIds);
         if (parents) {
-          finalData = finalData.map((d: any) => {
+          combinedData = combinedData.map((d: any) => {
             if (d.source_out_stock_id) {
               const p = (parents as any[]).find(p => p.id === d.source_out_stock_id);
-              if (p) {
-                return { ...d, manual_parent_stock: p };
-              }
+              if (p) return { ...d, manual_parent_stock: p };
             }
             return d;
           });
         }
       }
-      setData(finalData);
-      if (count !== null) setTotalRows(count);
+
+      // Sort by date desc, then created_at desc
+      combinedData.sort((a, b) => {
+        const dateA = new Date(a.transaction_date).getTime();
+        const dateB = new Date(b.transaction_date).getTime();
+        if (dateA !== dateB) return dateB - dateA;
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      });
+
+      setTotalRows(combinedData.length);
+      
+      // Paginate
+      const from = (page - 1) * pageSize;
+      const paginatedData = combinedData.slice(from, from + pageSize);
+      
+      setData(paginatedData);
+    } catch (err: any) {
+      console.error(err); 
+      toast.error('Terjadi kesalahan. Silakan coba kembali.'); 
     }
+    
     if (!isBackground) setLoading(false);
   };
 
@@ -74,17 +128,18 @@ export default function FinanceRecapPage() {
 
   useBackgroundRefresh(fetchData);
 
-  const handleToggleCheck = async (id: string, currentValue: boolean) => {
+  const handleToggleCheck = async (item: any) => {
     if (!hasSupabaseConfig) return toast.error('Fitur dinonaktifkan di Preview Mode');
     
     try {
-      const newValue = !currentValue;
+      const newValue = !item.is_checked_finance;
       // Optimistic update
-      setData(prev => prev.map(item => item.id === id ? { ...item, is_checked_finance: newValue } : item));
+      setData(prev => prev.map(d => d.id === item.id ? { ...d, is_checked_finance: newValue } : d));
       
-      const { error } = await (supabase.from('stock_out') as any)
+      const table = item.table_source || 'stock_out';
+      const { error } = await (supabase.from(table) as any)
         .update({ is_checked_finance: newValue })
-        .eq('id', id);
+        .eq('id', item.id);
         
       if (error) throw error;
       toast.success(`Status pemerikasaan diperbarui`);
@@ -171,7 +226,7 @@ export default function FinanceRecapPage() {
                   <tr key={item.id} className="hover:bg-slate-50 bg-white transition-colors">
                     <td className="px-4 py-3 text-center">
                       <button
-                        onClick={() => handleToggleCheck(item.id, item.is_checked_finance)}
+                        onClick={() => handleToggleCheck(item)}
                         className={`w-6 h-6 rounded flex items-center justify-center transition-colors border ${
                           item.is_checked_finance 
                             ? 'bg-indigo-500 border-indigo-500 text-white shadow-sm' 
@@ -182,17 +237,21 @@ export default function FinanceRecapPage() {
                       </button>
                     </td>
                     <td className="px-4 py-3 font-mono font-medium text-slate-700">
-                      {item.stock_in?.transaction_number || 
-                       (item.manual_parent_stock?.transaction_number 
-                        ? `VS-${item.manual_parent_stock.transaction_number.replace('OUT-', '')}` 
-                        : '-')}
+                      {item.table_source === 'deadstock_out' 
+                        ? (item.deadstock_in?.transaction_number || '-') 
+                        : (item.stock_in?.transaction_number || 
+                           (item.manual_parent_stock?.transaction_number 
+                            ? `VS-${item.manual_parent_stock.transaction_number.replace('OUT-', '')}` 
+                            : '-'))}
                     </td>
                     <td className="px-4 py-3">{format(new Date(item.transaction_date), 'dd MMM yyyy')}</td>
                     <td className="px-4 py-3 font-medium text-slate-900">{item.product?.product_name || '-'}</td>
                     <td className="px-4 py-3 text-right font-bold text-red-500">-{item.quantity}</td>
                     <td className="px-4 py-3 text-right">Rp {(item.unit_cost || 0).toLocaleString('id-ID')}</td>
                     <td className="px-4 py-3 text-right font-bold text-slate-900">Rp {(item.total_cost || 0).toLocaleString('id-ID')}</td>
-                    <td className="px-4 py-3">{item.reason?.name || '-'}</td>
+                    <td className="px-4 py-3">
+                      {item.table_source === 'deadstock_out' ? (item.destination || 'Deadstock') : (item.reason?.name || '-')}
+                    </td>
                     <td className="px-4 py-3 max-w-[200px] truncate" title={item.notes || ''}>{item.notes || '-'}</td>
                     <td className="px-4 py-3">{item.pic?.name || '-'}</td>
                   </tr>

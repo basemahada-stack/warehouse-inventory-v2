@@ -14,3 +14,6 @@ DROP TABLE IF EXISTS vendor_stock CASCADE;
 
 -- 4. Add finance check column to stock_out
 ALTER TABLE stock_out ADD COLUMN IF NOT EXISTS is_checked_finance BOOLEAN DEFAULT FALSE;
+
+-- 5. Add finance check column to deadstock_out
+ALTER TABLE deadstock_out ADD COLUMN IF NOT EXISTS is_checked_finance BOOLEAN DEFAULT FALSE;
