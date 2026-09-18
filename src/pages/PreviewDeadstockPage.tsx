@@ -11,7 +11,7 @@ export default function PreviewDeadstockPage() {
   const [search, setSearch] = useState('');
   const [products, setProducts] = useState<any[]>([]);
   const [productFilter, setProductFilter] = useState('');
-  const [selectedItem, setSelectedItem] = useState<any | null>(null);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   const fetchData = async (isBackground = false) => {
     if (!hasSupabaseConfig) {
@@ -225,7 +225,7 @@ export default function PreviewDeadstockPage() {
                     src={item.photo_url} 
                     alt={item.product?.product_name || 'Deadstock'} 
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 cursor-pointer"
-                    onClick={() => setSelectedItem(item)}
+                    onClick={() => setSelectedImage(item.photo_url)}
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-gray-200 text-gray-500 font-bold text-4xl">
@@ -262,75 +262,25 @@ export default function PreviewDeadstockPage() {
         </div>
       )}
 
-      {/* Detail Modal */}
-      {selectedItem && (
+      {/* Image Modal */}
+      {selectedImage && (
         <div 
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 sm:p-8"
-          onClick={() => setSelectedItem(null)}
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 sm:p-8"
+          onClick={() => setSelectedImage(null)}
         >
-          <div 
-            className="relative max-w-4xl w-full bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row max-h-[90vh]"
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div className="relative max-w-5xl w-full h-full flex items-center justify-center">
             <button 
-              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-full transition-colors z-10"
-              onClick={() => setSelectedItem(null)}
+              className="absolute top-4 right-4 p-2 text-white/70 hover:text-white bg-black/40 hover:bg-black/60 rounded-full backdrop-blur-md transition-colors z-10"
+              onClick={() => setSelectedImage(null)}
             >
-              <X className="w-5 h-5" />
+              <X className="w-6 h-6" />
             </button>
-            
-            {/* Image Section */}
-            <div className="w-full md:w-1/2 bg-slate-50 flex items-center justify-center p-8 border-b md:border-b-0 md:border-r border-slate-200">
-              {selectedItem.photo_url ? (
-                <img 
-                  src={selectedItem.photo_url} 
-                  alt="Preview" 
-                  className="max-w-full max-h-[50vh] md:max-h-full object-contain drop-shadow-xl"
-                />
-              ) : (
-                <div className="w-full aspect-square flex items-center justify-center text-slate-400 font-bold text-4xl">
-                  NA
-                </div>
-              )}
-            </div>
-            
-            {/* Details Section */}
-            <div className="w-full md:w-1/2 p-6 md:p-8 overflow-y-auto">
-              <h2 className="text-2xl font-bold text-slate-900 mb-2">{selectedItem.product?.product_name || 'Unknown Product'}</h2>
-              <p className="text-sm text-slate-500 font-mono mb-6">{selectedItem.transaction_number}</p>
-              
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Status Deadstock</p>
-                    <p className="text-lg font-bold text-slate-800">{selectedItem.deadstock_status || '-'}</p>
-                  </div>
-                  <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Sisa Quantity</p>
-                    <p className="text-lg font-bold text-indigo-600">{selectedItem.remaining_qty} <span className="text-sm text-slate-500 font-medium">pcs</span></p>
-                  </div>
-                </div>
-
-                <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Harga Satuan</p>
-                  <p className="text-lg font-bold text-slate-800">Rp {(selectedItem.unit_cost || 0).toLocaleString('id-ID')}</p>
-                </div>
-                
-                <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4 shadow-sm">
-                  <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-wider mb-1">Total Nilai Asset</p>
-                  <p className="text-2xl font-bold text-indigo-700">Rp {((selectedItem.remaining_qty || 0) * (selectedItem.unit_cost || 0)).toLocaleString('id-ID')}</p>
-                </div>
-              </div>
-
-              <div className="mt-8 flex justify-end border-t border-slate-100 pt-6">
-                <button 
-                  className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors w-full sm:w-auto"
-                  onClick={() => setSelectedItem(null)}
-                >
-                  Tutup
-                </button>
-              </div>
-            </div>
+            <img 
+              src={selectedImage} 
+              alt="Preview" 
+              className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            />
           </div>
         </div>
       )}
