@@ -1,11 +1,12 @@
 import { useEffect } from 'react';
 
-export function useBackgroundRefresh(fetchFn: (isBackground?: boolean) => Promise<void> | void, intervalMs: number = 600000) {
+export function useBackgroundRefresh(fetchFn: (isBackground?: boolean) => Promise<void> | void) {
   useEffect(() => {
-    const interval = setInterval(() => {
+    const handleRefresh = () => {
       fetchFn(true); // Indicate this is a background fetch
-    }, intervalMs);
+    };
     
-    return () => clearInterval(interval);
-  }, [fetchFn, intervalMs]);
+    window.addEventListener('global-refresh', handleRefresh);
+    return () => window.removeEventListener('global-refresh', handleRefresh);
+  }, [fetchFn]);
 }

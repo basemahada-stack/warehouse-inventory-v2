@@ -13,7 +13,8 @@ import {
   ChevronDown,
   ChevronUp,
   Calculator,
-  Download
+  Download,
+  RefreshCw
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { cn } from '../lib/utils';
@@ -55,9 +56,19 @@ const sidebarMenus = [
 
 const LiveClock = () => {
   const [time, setTime] = useState(new Date());
+  const [countdown, setCountdown] = useState(600); // 10 minutes
 
   useEffect(() => {
-    const timer = setInterval(() => setTime(new Date()), 1000);
+    const timer = setInterval(() => {
+      setTime(new Date());
+      setCountdown(prev => {
+        if (prev <= 1) {
+          window.dispatchEvent(new CustomEvent('global-refresh'));
+          return 600;
+        }
+        return prev - 1;
+      });
+    }, 1000);
     return () => clearInterval(timer);
   }, []);
 
@@ -71,9 +82,18 @@ const LiveClock = () => {
     second: '2-digit'
   });
 
+  const minutes = Math.floor(countdown / 60);
+  const seconds = countdown % 60;
+
   return (
-    <div className="text-xs font-medium text-slate-600 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 hidden md:block">
-      {formatter.format(time).replace(/\./g, ':')}
+    <div className="flex items-center gap-3">
+      <div className="text-xs font-medium text-slate-600 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 hidden md:block">
+        {formatter.format(time).replace(/\./g, ':')}
+      </div>
+      <div className="text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-lg border border-indigo-200 flex items-center gap-1.5" title="Refresh data otomatis berikutnya">
+        <RefreshCw className={`w-3.5 h-3.5 ${countdown <= 5 ? 'animate-spin text-indigo-500' : ''}`} />
+        {minutes.toString().padStart(2, '0')}:{seconds.toString().padStart(2, '0')}
+      </div>
     </div>
   );
 };
