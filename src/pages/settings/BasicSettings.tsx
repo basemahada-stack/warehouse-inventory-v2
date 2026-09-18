@@ -1,4 +1,5 @@
 import React from 'react';
+import { useBackgroundRefresh } from '../../hooks/useBackgroundRefresh';
 import MasterDataPage, { ColumnDef } from './MasterDataPage';
 
 export const CategoriesPage = () => (

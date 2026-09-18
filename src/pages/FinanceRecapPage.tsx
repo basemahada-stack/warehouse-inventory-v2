@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useBackgroundRefresh } from '../hooks/useBackgroundRefresh';
 import { supabase, hasSupabaseConfig } from '../lib/supabase';
 import { Card, Input, Select, Button } from '../components/ui';
 import { Search, Loader2, Calculator, Check, X } from 'lucide-react';
@@ -19,12 +20,12 @@ export default function FinanceRecapPage() {
   const [totalRows, setTotalRows] = useState(0);
   const pageSize = 15;
 
-  const fetchData = async () => {
+  const fetchData = async (isBackground = false) => {
     if (!hasSupabaseConfig) {
-      setLoading(false);
+      if (!isBackground) setLoading(false);
       return;
     }
-    setLoading(true);
+    if (!isBackground) setLoading(true);
     let query = supabase.from('stock_out')
       .select('*, product:products(product_name), reason:out_stock_reasons!inner(name), pic:pics(name), vendor:vendors(name), stock_in:stock_in(transaction_number)', { count: 'exact' })
       .ilike('reason.name', '%konsumen%')
@@ -64,12 +65,14 @@ export default function FinanceRecapPage() {
       setData(finalData);
       if (count !== null) setTotalRows(count);
     }
-    setLoading(false);
+    if (!isBackground) setLoading(false);
   };
 
   useEffect(() => {
     fetchData();
   }, [search, dateFilter, statusFilter, page]);
+
+  useBackgroundRefresh(fetchData);
 
   const handleToggleCheck = async (id: string, currentValue: boolean) => {
     if (!hasSupabaseConfig) return toast.error('Fitur dinonaktifkan di Preview Mode');

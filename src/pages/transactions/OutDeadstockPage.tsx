@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useBackgroundRefresh } from '../../hooks/useBackgroundRefresh';
 import { supabase, hasSupabaseConfig } from '../../lib/supabase';
 import { Card, Button, Input, Modal, Select } from '../../components/ui';
 import { Plus, Search, Loader2, Eye, Edit2, Trash2 } from 'lucide-react';
@@ -33,14 +34,14 @@ export default function OutDeadstockPage() {
   const [viewData, setViewData] = useState<any>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const fetchData = async () => {
+  const fetchData = async (isBackground = false) => {
     if (!hasSupabaseConfig) {
       setData([]);
       setTotalRows(0);
-      setLoading(false);
+      if (!isBackground) setLoading(false);
       return;
     }
-    setLoading(true);
+    if (!isBackground) setLoading(true);
     let query = supabase.from('deadstock_out')
       .select('*, product:products(product_name, unit:units(name)), pic:pics(name), deadstock_in:deadstock_in(transaction_number)', { count: 'exact' })
       .order('created_at', { ascending: false });
@@ -60,7 +61,7 @@ export default function OutDeadstockPage() {
       setData(data || []);
       if (count !== null) setTotalRows(count);
     }
-    setLoading(false);
+    if (!isBackground) setLoading(false);
   };
 
   const fetchDependencies = async () => {
@@ -91,6 +92,8 @@ export default function OutDeadstockPage() {
   useEffect(() => {
     fetchData();
   }, [search, dateFilter, productFilter, picFilter, page]);
+
+  useBackgroundRefresh(fetchData);
 
   useEffect(() => {
     fetchDependencies();

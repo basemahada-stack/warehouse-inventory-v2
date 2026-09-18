@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useBackgroundRefresh } from '../../hooks/useBackgroundRefresh';
 import { supabase, hasSupabaseConfig } from '../../lib/supabase';
 import { Card, Button, Input, Modal, Select } from '../../components/ui';
 import { Plus, Edit2, Trash2, Search, Loader2 } from 'lucide-react';
@@ -23,17 +24,17 @@ export default function ProductsPage() {
   const [formData, setFormData] = useState<any>({});
   const [submitting, setSubmitting] = useState(false);
 
-  const fetchData = async () => {
+  const fetchData = async (isBackground = false) => {
     if (!hasSupabaseConfig) {
       import('../../lib/mockData').then((mock) => {
         setData(mock.mockProducts);
         setTotalRows(mock.mockProducts.length);
-        setLoading(false);
+        if (!isBackground) setLoading(false);
       });
       return;
     }
     
-    setLoading(true);
+    if (!isBackground) setLoading(true);
     let query = supabase.from('products').select(`*, category:categories(name), unit:units(name)`, { count: 'exact' }).order('created_at', { ascending: false });
     
     if (search) {
@@ -56,7 +57,7 @@ export default function ProductsPage() {
       setData(data || []);
       if (count !== null) setTotalRows(count);
     }
-    setLoading(false);
+    if (!isBackground) setLoading(false);
   };
 
   const fetchDependencies = async () => {
@@ -72,6 +73,8 @@ export default function ProductsPage() {
   useEffect(() => {
     fetchData();
   }, [search, categoryFilter, statusFilter, page]);
+
+  useBackgroundRefresh(fetchData);
 
   useEffect(() => {
     fetchDependencies();

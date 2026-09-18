@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
+import { useBackgroundRefresh } from '../hooks/useBackgroundRefresh';
 import { supabase, hasSupabaseConfig } from '../lib/supabase';
 import { Card, Input, Select } from '../components/ui';
 import { Search, Loader2, Image as ImageIcon, Box, X } from 'lucide-react';
@@ -12,12 +13,12 @@ export default function PreviewDeadstockPage() {
   const [productFilter, setProductFilter] = useState('');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
-  const fetchData = async () => {
+  const fetchData = async (isBackground = false) => {
     if (!hasSupabaseConfig) {
-      setLoading(false);
+      if (!isBackground) setLoading(false);
       return;
     }
-    setLoading(true);
+    if (!isBackground) setLoading(true);
 
     try {
       // 1. Fetch deadstock_in with photo
@@ -71,13 +72,15 @@ export default function PreviewDeadstockPage() {
       console.error(error);
       toast.error('Gagal mengambil data preview deadstock.');
     } finally {
-      setLoading(false);
+      if (!isBackground) setLoading(false);
     }
   };
 
   useEffect(() => {
     fetchData();
   }, []);
+
+  useBackgroundRefresh(fetchData);
 
   const filteredData = useMemo(() => {
     return data.filter(item => {

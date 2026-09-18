@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useBackgroundRefresh } from '../../hooks/useBackgroundRefresh';
 import { supabase, hasSupabaseConfig } from '../../lib/supabase';
 import { Card, Button, Input, Modal, Select } from '../../components/ui';
 import { Plus, Search, Loader2, Eye, Edit2, Trash2 } from 'lucide-react';
@@ -35,16 +36,16 @@ export default function InStockPage() {
   const [viewData, setViewData] = useState<any>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const fetchData = async () => {
+  const fetchData = async (isBackground = false) => {
     if (!hasSupabaseConfig) {
       import('../../lib/mockData').then((mock) => {
         setData(mock.mockInStock);
         setTotalRows(mock.mockInStock.length);
-        setLoading(false);
+        if (!isBackground) setLoading(false);
       });
       return;
     }
-    setLoading(true);
+    if (!isBackground) setLoading(true);
     let query = supabase.from('stock_in')
       .select('*, product:products(product_name, unit:units(name)), vendor:vendors(name), reason:in_stock_reasons(name), pic:pics(name)', { count: 'exact' })
       .order('created_at', { ascending: false });
@@ -65,7 +66,7 @@ export default function InStockPage() {
       setData(data || []);
       if (count !== null) setTotalRows(count);
     }
-    setLoading(false);
+    if (!isBackground) setLoading(false);
   };
 
   const fetchDependencies = async () => {
@@ -93,6 +94,8 @@ export default function InStockPage() {
   useEffect(() => {
     fetchData();
   }, [search, dateFilter, productFilter, vendorFilter, picFilter, page]);
+
+  useBackgroundRefresh(fetchData);
 
   useEffect(() => {
     fetchDependencies();

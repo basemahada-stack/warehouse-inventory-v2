@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
+import { useBackgroundRefresh } from '../hooks/useBackgroundRefresh';
 import { supabase, hasSupabaseConfig } from '../lib/supabase';
 import { Card, Button, Input, Modal, Select } from '../components/ui';
 import { Search, Loader2, Eye, Box, AlertTriangle, PackageX, PackageCheck, List, ArrowDownRight, ArrowUpRight, DollarSign } from 'lucide-react';
@@ -49,17 +50,17 @@ export default function InventoryPage({ type = 'stock' }: { type?: 'stock' | 'wa
     return allData;
   };
 
-  const fetchInventory = async () => {
+  const fetchInventory = async (isBackground = false) => {
     if (!hasSupabaseConfig) {
       import('../lib/mockData').then((mock) => {
         setInventory(mock.mockInventory);
         setCategories(mock.mockCategories);
-        setLoading(false);
+        if (!isBackground) setLoading(false);
       });
       return;
     }
     
-    setLoading(true);
+    if (!isBackground) setLoading(true);
     
     // Fetch all required data to calculate inventory
     const [products, stockIn, stockOut, categories] = await Promise.all([
@@ -162,12 +163,14 @@ export default function InventoryPage({ type = 'stock' }: { type?: 'stock' | 'wa
     });
 
     setInventory(calculated);
-    setLoading(false);
+    if (!isBackground) setLoading(false);
   };
 
   useEffect(() => {
     fetchInventory();
   }, [type]);
+
+  useBackgroundRefresh(fetchInventory);
 
   const fetchMovements = async (productId: string) => {
     setMovementLoading(true);

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useBackgroundRefresh } from '../../hooks/useBackgroundRefresh';
 import { supabase, hasSupabaseConfig } from '../../lib/supabase';
 import { Card, Button, Input, Modal, Select } from '../../components/ui';
 import { Plus, Edit2, Trash2, Search, Loader2 } from 'lucide-react';
@@ -28,7 +29,7 @@ export default function MasterDataPage({ title, tableName, columns, relations }:
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [submitting, setSubmitting] = useState(false);
 
-  const fetchData = async () => {
+  const fetchData = async (isBackground = false) => {
     if (!hasSupabaseConfig) {
       import('../../lib/mockData').then((mock: any) => {
         const mockMap: any = {
@@ -40,11 +41,11 @@ export default function MasterDataPage({ title, tableName, columns, relations }:
           'out_stock_reasons': mock.mockReasons
         };
         setData(mockMap[tableName] || []);
-        setLoading(false);
+        if (!isBackground) setLoading(false);
       });
       return;
     }
-    setLoading(true);
+    if (!isBackground) setLoading(true);
     let query = supabase.from(tableName).select('*').order('created_at', { ascending: false });
     
     if (search) {
@@ -54,12 +55,14 @@ export default function MasterDataPage({ title, tableName, columns, relations }:
     const { data, error } = await query;
     if (error) { console.error(error); toast.error('Terjadi kesalahan. Silakan coba kembali.'); }
     else setData(data || []);
-    setLoading(false);
+    if (!isBackground) setLoading(false);
   };
 
   useEffect(() => {
     fetchData();
   }, [tableName, search]);
+
+  useBackgroundRefresh(fetchData);
 
   const handleOpenModal = (item?: any) => {
     if (item) {

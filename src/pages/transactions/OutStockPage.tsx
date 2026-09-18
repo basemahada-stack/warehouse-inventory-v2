@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useBackgroundRefresh } from '../../hooks/useBackgroundRefresh';
 import { supabase, hasSupabaseConfig } from '../../lib/supabase';
 import { Card, Button, Input, Modal, Select } from '../../components/ui';
 import { Plus, Search, Loader2, Eye, Edit2, Trash2 } from 'lucide-react';
@@ -36,16 +37,16 @@ export default function OutStockPage() {
   const [viewData, setViewData] = useState<any>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const fetchData = async () => {
+  const fetchData = async (isBackground = false) => {
     if (!hasSupabaseConfig) {
       import('../../lib/mockData').then((mock) => {
         setData(mock.mockOutStock);
         setTotalRows(mock.mockOutStock.length);
-        setLoading(false);
+        if (!isBackground) setLoading(false);
       });
       return;
     }
-    setLoading(true);
+    if (!isBackground) setLoading(true);
     let query = supabase.from('stock_out')
       .select('*, product:products(product_name, unit:units(name)), reason:out_stock_reasons(name), pic:pics(name), stock_in:stock_in(transaction_number, vendor:vendors(name)), vendor:vendors(name), parent_stock:stock_out!source_out_stock_id(transaction_number)', { count: 'exact' })
       .order('created_at', { ascending: false });
@@ -82,7 +83,7 @@ export default function OutStockPage() {
       setData(finalData);
       if (count !== null) setTotalRows(count);
     }
-    setLoading(false);
+    if (!isBackground) setLoading(false);
   };
 
   const fetchDependencies = async () => {
@@ -129,6 +130,8 @@ export default function OutStockPage() {
   useEffect(() => {
     fetchData();
   }, [search, dateFilter, productFilter, reasonFilter, picFilter, page]);
+
+  useBackgroundRefresh(fetchData);
 
   useEffect(() => {
     fetchDependencies();

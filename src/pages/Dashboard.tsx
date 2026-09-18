@@ -12,6 +12,7 @@ import {
 } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import { useBackgroundRefresh } from '../hooks/useBackgroundRefresh';
 
 const COLORS = ['#3b82f6', '#f59e0b', '#ef4444', '#10b981', '#8b5cf6', '#6366f1', '#ec4899'];
 const PIE_COLORS = { 'AMAN': '#10b981', 'MENIPIS': '#f59e0b', 'HABIS': '#ef4444' };
@@ -27,10 +28,10 @@ export default function Dashboard() {
   const [inventory, setInventory] = useState<any[]>([]);
   const [stockIn, setStockIn] = useState<any[]>([]);
   const [stockOut, setStockOut] = useState<any[]>([]);
-  const fetchData = async () => {
-    if (!hasSupabaseConfig) return setLoading(false);
+  const fetchData = async (isBackground = false) => {
+    if (!hasSupabaseConfig) return isBackground ? undefined : setLoading(false);
     
-    setLoading(true);
+    if (!isBackground) setLoading(true);
     try {
       const [pRes, inRes, outRes, dsInRes, dsOutRes] = await Promise.all([
         supabase.from('products').select('id, product_name, product_code, minimum_stock, unit:units(name), is_active').eq('is_active', true),
@@ -89,12 +90,14 @@ export default function Dashboard() {
     } catch (err: any) {
       toast.error('Gagal mengambil data dashboard');
     }
-    setLoading(false);
+    if (!isBackground) setLoading(false);
   };
 
   useEffect(() => {
     fetchData();
   }, []);
+
+  useBackgroundRefresh(fetchData);
 
   // Compute stats
   const stats = useMemo(() => {

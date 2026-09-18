@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
+import { useBackgroundRefresh } from '../../hooks/useBackgroundRefresh';
 import { supabase, hasSupabaseConfig } from '../../lib/supabase';
 import { Card, Select } from '../../components/ui';
 import { Search, Loader2, Package } from 'lucide-react';
@@ -17,13 +18,13 @@ export default function VendorStockPage() {
   const [filterVendor, setFilterVendor] = useState('');
   const [filterProduct, setFilterProduct] = useState('');
   
-  const fetchData = async () => {
+  const fetchData = async (isBackground = false) => {
     if (!hasSupabaseConfig) {
-      setLoading(false);
+      if (!isBackground) setLoading(false);
       return;
     }
     
-    setLoading(true);
+    if (!isBackground) setLoading(true);
     // Fetch all stock_out and filter client-side to ensure we get both parent and child transactions
     const query = supabase.from('stock_out')
       .select('*, product:products(product_name, unit:units(name)), vendor:vendors(name)')
@@ -34,7 +35,7 @@ export default function VendorStockPage() {
     if (error) { 
       console.error(error); 
       toast.error('Terjadi kesalahan. Silakan coba kembali.'); 
-      setLoading(false);
+      if (!isBackground) setLoading(false);
       return;
     }
 
@@ -62,7 +63,7 @@ export default function VendorStockPage() {
     });
     
     setData(processedData);
-    setLoading(false);
+    if (!isBackground) setLoading(false);
   };
 
   const fetchDependencies = async () => {
@@ -77,7 +78,9 @@ export default function VendorStockPage() {
 
   useEffect(() => {
     fetchData();
-  }, []); // Re-fetch only on mount, client-side filter is better for this processed data
+  }, []);
+
+  useBackgroundRefresh(fetchData); // Re-fetch only on mount, client-side filter is better for this processed data
 
   useEffect(() => {
     fetchDependencies();
