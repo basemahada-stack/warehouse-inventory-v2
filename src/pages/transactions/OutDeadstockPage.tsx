@@ -336,7 +336,6 @@ export default function OutDeadstockPage() {
                 <th className="px-4 py-2 text-xs border-b border-slate-100">Tujuan</th>
                 <th className="px-4 py-2 text-xs border-b border-slate-100">PIC Sales</th>
                 <th className="px-4 py-2 text-xs border-b border-slate-100">No Invoice</th>
-                <th className="px-4 py-2 text-xs border-b border-slate-100">Ket. Sales</th>
                 <th className="px-4 py-2 text-xs border-b border-slate-100 text-center">Action</th>
               </tr>
             </thead>
@@ -360,7 +359,6 @@ export default function OutDeadstockPage() {
                     <td className="px-4 py-3">{item.destination || '-'}</td>
                     <td className="px-4 py-3">{item.pic?.name || '-'}</td>
                     <td className="px-4 py-3">{item.invoice_number || '-'}</td>
-                    <td className="px-4 py-3 truncate max-w-[150px]">{item.notes || '-'}</td>
                     <td className="px-4 py-3 text-center">
                       <div className="flex items-center justify-center gap-2">
                         <button onClick={() => handleView(item)} className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors" title="View Detail">
