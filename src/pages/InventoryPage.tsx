@@ -528,10 +528,31 @@ export default function InventoryPage({ type = 'stock' }: { type?: 'stock' | 'wa
       </Card>
 
       {/* Product Detail Modal */}
-      <Modal isOpen={isDetailOpen} onClose={() => setIsDetailOpen(false)} title="Detail Kartu Stock">
+      <Modal isOpen={isDetailOpen} onClose={() => setIsDetailOpen(false)} title="Detail Kartu Stock" maxWidth="max-w-4xl">
         {selectedProduct && (
-          <div className="space-y-6">
-            <div className="flex border-b border-slate-200">
+          <div className="flex flex-col md:flex-row gap-6">
+            {/* Kolom Kiri: Gambar */}
+            <div className="w-full md:w-1/3 shrink-0">
+              <div className="aspect-[3/4] md:aspect-[4/5] bg-slate-100 rounded-xl overflow-hidden border border-slate-200 sticky top-0">
+                {selectedProduct.photo_url ? (
+                  <img src={selectedProduct.photo_url} alt={selectedProduct.product_name} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex flex-col items-center justify-center text-slate-300 gap-3">
+                    <ImageIcon className="w-16 h-16" />
+                    <span className="text-sm font-medium">No Image</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Kolom Kanan: Info & Tabs */}
+            <div className="w-full md:w-2/3 space-y-6">
+              <div>
+                <h2 className="text-2xl font-bold text-slate-900">{selectedProduct.product_name}</h2>
+                <p className="text-slate-500 font-mono mt-1">{selectedProduct.product_code} • {selectedProduct.category?.name}</p>
+              </div>
+
+              <div className="flex border-b border-slate-200">
               <button 
                 className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'summary' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'}`}
                 onClick={() => setActiveTab('summary')}
@@ -548,22 +569,6 @@ export default function InventoryPage({ type = 'stock' }: { type?: 'stock' | 'wa
 
             {activeTab === 'summary' && (
               <div className="space-y-4">
-                <div className="flex items-center gap-4 mb-6">
-                  {selectedProduct.photo_url ? (
-                    <div className="w-16 h-16 rounded-lg overflow-hidden shrink-0 border border-slate-200 bg-slate-50">
-                      <img src={selectedProduct.photo_url} alt={selectedProduct.product_name} className="w-full h-full object-cover" />
-                    </div>
-                  ) : (
-                    <div className="w-12 h-12 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
-                      <Box className="w-6 h-6" />
-                    </div>
-                  )}
-                  <div>
-                    <h2 className="text-xl font-bold text-slate-900">{selectedProduct.product_name}</h2>
-                    <p className="text-slate-500 text-sm font-mono">{selectedProduct.product_code} • {selectedProduct.category?.name}</p>
-                  </div>
-                </div>
-
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-4 rounded-xl bg-slate-50 border border-slate-100">
                     <span className="text-slate-500 text-xs font-medium uppercase">Stock Gudang</span>
@@ -655,6 +660,7 @@ export default function InventoryPage({ type = 'stock' }: { type?: 'stock' | 'wa
             
             <div className="flex justify-end pt-4">
               <Button onClick={() => setIsDetailOpen(false)}>Tutup</Button>
+            </div>
             </div>
           </div>
         )}
