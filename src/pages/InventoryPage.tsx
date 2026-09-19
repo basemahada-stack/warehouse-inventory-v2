@@ -488,16 +488,7 @@ export default function InventoryPage({ type = 'stock' }: { type?: 'stock' | 'wa
                     </div>
                   )}
                   
-                  <div className="absolute top-2 right-2 flex flex-col gap-1.5">
-                    <div className="bg-white/95 backdrop-blur-sm px-2 py-1 rounded-md text-[10px] font-bold text-slate-700 shadow-sm border border-slate-200 flex items-center gap-1.5">
-                      <Box className="w-3 h-3 text-blue-500" /> Gudang: {item.gudangStock}
-                    </div>
-                    {type === 'stock' && (
-                      <div className="bg-white/95 backdrop-blur-sm px-2 py-1 rounded-md text-[10px] font-bold text-slate-700 shadow-sm border border-slate-200 flex items-center gap-1.5">
-                        <PackageCheck className="w-3 h-3 text-indigo-500" /> Vendor: {item.totalVendor}
-                      </div>
-                    )}
-                  </div>
+                  {/* Labels dipindah ke bawah */}
 
                   <div className="absolute bottom-2 left-2">
                     {item.status === 'HABIS' ? (
@@ -515,10 +506,28 @@ export default function InventoryPage({ type = 'stock' }: { type?: 'stock' | 'wa
                     <h3 className="text-sm font-bold text-slate-800 line-clamp-2 mb-1" title={item.product_name}>{item.product_name}</h3>
                     <p className="text-[10px] text-slate-500 font-mono">{item.product_code} • {item.category?.name}</p>
                   </div>
-                  
-                  <div className="mt-3 pt-3 border-t border-slate-100 flex justify-between items-center">
-                    <span className="text-[10px] text-slate-500 font-medium">Nilai Asset</span>
-                    <span className="text-sm font-bold text-teal-600">Rp {(item.assetValue || 0).toLocaleString('id-ID')}</span>
+                  <div className="mt-3 pt-3 border-t border-slate-100 space-y-2">
+                    <div className="flex justify-between items-center bg-indigo-50/50 p-1.5 rounded-md">
+                      <span className="text-[10px] text-indigo-600 font-bold uppercase">Total Stock</span>
+                      <span className="text-xs font-bold text-indigo-700">{item.totalInventory}</span>
+                    </div>
+                    
+                    <div className="flex justify-between items-center px-1">
+                      <span className="text-[10px] text-slate-500 flex items-center gap-1.5"><Box className="w-3 h-3 text-blue-500" /> Gudang</span>
+                      <span className="text-xs font-bold text-slate-700">{item.gudangStock}</span>
+                    </div>
+                    
+                    {type === 'stock' && (
+                      <div className="flex justify-between items-center px-1">
+                        <span className="text-[10px] text-slate-500 flex items-center gap-1.5"><PackageCheck className="w-3 h-3 text-indigo-500" /> Vendor</span>
+                        <span className="text-xs font-bold text-slate-700">{item.totalVendor}</span>
+                      </div>
+                    )}
+                    
+                    <div className="flex justify-between items-center pt-2 mt-2 border-t border-slate-100">
+                      <span className="text-[10px] text-slate-500 font-medium">Nilai Asset</span>
+                      <span className="text-sm font-bold text-teal-600">Rp {(item.assetValue || 0).toLocaleString('id-ID')}</span>
+                    </div>
                   </div>
                 </div>
               </div>

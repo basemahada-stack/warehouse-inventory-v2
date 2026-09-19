@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import SettingsLayout from './components/SettingsLayout';
 import Dashboard from './pages/Dashboard';
@@ -20,9 +21,27 @@ import {
 } from './pages/settings/BasicSettings';
 import FinanceRecapPage from './pages/FinanceRecapPage';
 
+function SessionRedirector({ children }: { children: React.ReactNode }) {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    const isNewSession = !sessionStorage.getItem('active_session');
+    if (isNewSession) {
+      sessionStorage.setItem('active_session', 'true');
+      if (location.pathname !== '/') {
+        navigate('/', { replace: true });
+      }
+    }
+  }, []);
+
+  return <>{children}</>;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
+      <SessionRedirector>
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<Dashboard />} />
@@ -53,6 +72,7 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>
+      </SessionRedirector>
     </BrowserRouter>
   );
 }
