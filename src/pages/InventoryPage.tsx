@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useBackgroundRefresh } from '../hooks/useBackgroundRefresh';
 import { supabase, hasSupabaseConfig } from '../lib/supabase';
 import { Card, Button, Input, Modal, Select } from '../components/ui';
-import { Search, Loader2, Eye, Box, AlertTriangle, PackageX, PackageCheck, List, ArrowDownRight, ArrowUpRight, DollarSign } from 'lucide-react';
+import { Search, Loader2, Eye, Box, AlertTriangle, PackageX, PackageCheck, List, ArrowDownRight, ArrowUpRight, DollarSign, Image as ImageIcon } from 'lucide-react';
 import { format } from 'date-fns';
 
 export default function InventoryPage({ type = 'stock' }: { type?: 'stock' | 'warehouse' | 'deadstock' | 'cloudpop' | 'marketing' }) {
@@ -66,7 +66,7 @@ export default function InventoryPage({ type = 'stock' }: { type?: 'stock' | 'wa
     const [products, stockIn, stockOut, categories] = await Promise.all([
       fetchAll(() => supabase.from('products').select('*, category:categories(id, name), unit:units(id, name)')),
       fetchAll(() => supabase.from(type === 'deadstock' ? 'deadstock_in' : 'stock_in').select(
-        type === 'deadstock' ? 'id, product_id, quantity, total_cost, unit_cost, notes' : 'id, product_id, quantity, total_cost, unit_cost, reason:in_stock_reasons(name)'
+        type === 'deadstock' ? 'id, product_id, quantity, total_cost, unit_cost, notes, photo_url' : 'id, product_id, quantity, total_cost, unit_cost, photo_url, reason:in_stock_reasons(name)'
       )),
       fetchAll(() => supabase.from(type === 'deadstock' ? 'deadstock_out' : 'stock_out').select(
         type === 'deadstock' ? 'id, product_id, quantity, deadstock_in_id, unit_cost' : 'id, product_id, quantity, vendor_id, source_out_stock_id, stock_in_id, unit_cost, stock_in:stock_in(reason:in_stock_reasons(name))'
@@ -147,6 +147,9 @@ export default function InventoryPage({ type = 'stock' }: { type?: 'stock' | 'wa
 
       const hasHistory = filteredStockIn.length > 0 || outFromGudang.length > 0 || (type === 'stock' && (outToVendor > 0 || outFromVendor > 0));
 
+      const latestStockInWithPhoto = filteredStockIn.find(s => s.photo_url);
+      const photo_url = product.photo_url || latestStockInWithPhoto?.photo_url || null;
+
       return {
         ...product,
         gudangStock,
@@ -155,7 +158,8 @@ export default function InventoryPage({ type = 'stock' }: { type?: 'stock' | 'wa
         assetValue: assetGudang + assetVendor,
         notesBreakdown,
         status,
-        hasHistory
+        hasHistory,
+        photo_url
       };
     }).filter(item => {
       if (type === 'deadstock' && item.gudangStock <= 0) return false;
@@ -467,61 +471,59 @@ export default function InventoryPage({ type = 'stock' }: { type?: 'stock' | 'wa
           </select>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse whitespace-nowrap">
-            <thead className="bg-slate-50 text-[10px] uppercase text-slate-500 font-bold sticky top-0">
-              <tr>
-                <th className="px-4 py-2 text-xs border-b border-slate-100">Kode</th>
-                <th className="px-4 py-2 text-xs border-b border-slate-100">Nama Produk</th>
-                <th className="px-4 py-2 text-xs border-b border-slate-100">Kategori</th>
-                <th className="px-4 py-2 text-xs border-b border-slate-100">Satuan</th>
-                <th className="px-4 py-2 text-xs border-b border-slate-100 text-right">Stok Gudang</th>
-                <th className="px-4 py-2 text-xs border-b border-slate-100 text-right">Stok Vendor</th>
-                <th className="px-4 py-2 text-xs border-b border-slate-100 text-right bg-indigo-50">Total Inventory</th>
-                <th className="px-4 py-2 text-xs border-b border-slate-100 text-right bg-teal-50 text-teal-700">Nilai Asset</th>
-                <th className="px-4 py-2 text-xs border-b border-slate-100 text-right">Min. Stok</th>
-                <th className="px-4 py-2 text-xs border-b border-slate-100 text-center">Status</th>
-                <th className="px-4 py-2 text-xs border-b border-slate-100 text-center">Action</th>
-              </tr>
-            </thead>
-            <tbody className="text-xs text-slate-600">
-              {loading ? (
-                <tr><td colSpan={11} className="px-4 py-8 text-center"><Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />Memuat...</td></tr>
-              ) : filtered.length === 0 ? (
-                <tr><td colSpan={11} className="px-4 py-8 text-center text-gray-500">Tidak ada data</td></tr>
-              ) : (
-                filtered.map((item) => {
-                  return (
-                    <tr key={item.id} className={`hover:bg-slate-50 border-b border-slate-100 ${item.status === 'HABIS' ? 'bg-red-50/30' : item.status === 'MENIPIS' ? 'bg-amber-50/30' : ''}`}>
-                      <td className="px-4 py-3 font-mono">{item.product_code}</td>
-                      <td className="px-4 py-3 font-bold text-slate-900">{item.product_name}</td>
-                      <td className="px-4 py-3 italic">{item?.category?.name || '-'}</td>
-                      <td className="px-4 py-3">{item?.unit?.name || '-'}</td>
-                      <td className="px-4 py-3 text-right font-bold text-blue-600">{item.gudangStock}</td>
-                      <td className="px-4 py-3 text-right">{item.totalVendor}</td>
-                      <td className="px-4 py-3 text-right bg-indigo-50/50 font-bold text-indigo-700">{item.totalInventory}</td>
-                      <td className="px-4 py-3 text-right bg-teal-50/30 font-bold text-teal-600">Rp {(item.assetValue || 0).toLocaleString('id-ID')}</td>
-                      <td className="px-4 py-3 text-right text-slate-400">{item.minimum_stock}</td>
-                      <td className="px-4 py-3 text-center">
-                        {item.status === 'HABIS' ? (
-                          <span className="px-2 py-1 bg-rose-100 text-rose-700 rounded text-[10px] font-bold">HABIS</span>
-                        ) : item.status === 'MENIPIS' ? (
-                          <span className="px-2 py-1 bg-amber-100 text-amber-700 rounded text-[10px] font-bold">MENIPIS</span>
-                        ) : (
-                          <span className="px-2 py-1 bg-emerald-100 text-emerald-700 rounded text-[10px] font-bold">AMAN</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <button onClick={() => handleOpenDetail(item)} className="px-2 py-1 text-indigo-600 hover:bg-indigo-50 font-medium rounded text-xs transition-colors border border-indigo-100 flex items-center gap-1 mx-auto">
-                          <List className="w-3 h-3" /> Detail
-                        </button>
-                      </td>
-                    </tr>
-                  )
-                })
-              )}
-            </tbody>
-          </table>
+        <div className="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 sm:gap-6">
+          {loading ? (
+            <div className="col-span-full py-8 text-center text-slate-500"><Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />Memuat...</div>
+          ) : filtered.length === 0 ? (
+            <div className="col-span-full py-8 text-center text-slate-500">Tidak ada data</div>
+          ) : (
+            filtered.map((item) => (
+              <div key={item.id} onClick={() => handleOpenDetail(item)} className={`bg-white rounded-xl border ${item.status === 'HABIS' ? 'border-rose-200' : item.status === 'MENIPIS' ? 'border-amber-200' : 'border-slate-200'} shadow-sm hover:shadow-md transition-shadow overflow-hidden group flex flex-col cursor-pointer`}>
+                <div className="relative aspect-square bg-slate-100 overflow-hidden">
+                  {item.photo_url ? (
+                    <img src={item.photo_url} alt={item.product_name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-slate-50 text-slate-300">
+                      <ImageIcon className="w-12 h-12" />
+                    </div>
+                  )}
+                  
+                  <div className="absolute top-2 right-2 flex flex-col gap-1.5">
+                    <div className="bg-white/95 backdrop-blur-sm px-2 py-1 rounded-md text-[10px] font-bold text-slate-700 shadow-sm border border-slate-200 flex items-center gap-1.5">
+                      <Box className="w-3 h-3 text-blue-500" /> Gudang: {item.gudangStock}
+                    </div>
+                    {type === 'stock' && (
+                      <div className="bg-white/95 backdrop-blur-sm px-2 py-1 rounded-md text-[10px] font-bold text-slate-700 shadow-sm border border-slate-200 flex items-center gap-1.5">
+                        <PackageCheck className="w-3 h-3 text-indigo-500" /> Vendor: {item.totalVendor}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="absolute bottom-2 left-2">
+                    {item.status === 'HABIS' ? (
+                      <span className="px-2 py-1 bg-rose-500/90 backdrop-blur-sm text-white rounded text-[10px] font-bold shadow-sm">HABIS</span>
+                    ) : item.status === 'MENIPIS' ? (
+                      <span className="px-2 py-1 bg-amber-500/90 backdrop-blur-sm text-white rounded text-[10px] font-bold shadow-sm">MENIPIS</span>
+                    ) : (
+                      <span className="px-2 py-1 bg-emerald-500/90 backdrop-blur-sm text-white rounded text-[10px] font-bold shadow-sm">AMAN</span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="p-3 flex-1 flex flex-col justify-between bg-white">
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-800 line-clamp-2 mb-1" title={item.product_name}>{item.product_name}</h3>
+                    <p className="text-[10px] text-slate-500 font-mono">{item.product_code} • {item.category?.name}</p>
+                  </div>
+                  
+                  <div className="mt-3 pt-3 border-t border-slate-100 flex justify-between items-center">
+                    <span className="text-[10px] text-slate-500 font-medium">Nilai Asset</span>
+                    <span className="text-sm font-bold text-teal-600">Rp {(item.assetValue || 0).toLocaleString('id-ID')}</span>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </Card>
 

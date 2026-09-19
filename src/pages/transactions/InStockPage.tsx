@@ -113,7 +113,8 @@ export default function InStockPage() {
         pic_id: item.pic_id,
         total_cost: item.total_cost || 0,
         notes: item.notes,
-        deadstock_status: item.deadstock_status
+        deadstock_status: item.deadstock_status,
+        photo_url: item.photo_url
       });
     } else {
       setEditingId(null);
@@ -189,7 +190,8 @@ export default function InStockPage() {
         total_cost: formData.total_cost || 0,
         unit_cost: (formData.total_cost || 0) / (formData.quantity || 1),
         notes: formData.notes,
-        deadstock_status: formData.deadstock_status || null
+        deadstock_status: formData.deadstock_status || null,
+        photo_url: formData.photo_url || null
       };
 
       if (editingId) {
@@ -378,6 +380,34 @@ export default function InStockPage() {
             <option value="">Pilih PIC</option>
             {pics.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </Select>
+
+          <div>
+            <label className="block text-xs font-medium text-slate-700 mb-1">Upload Foto</label>
+            <div className="flex items-center gap-4">
+              {formData.photo_url && (
+                <div className="relative w-16 h-16 rounded-md overflow-hidden bg-slate-100 border border-slate-200">
+                  <img src={formData.photo_url} alt="Preview" className="w-full h-full object-cover" />
+                </div>
+              )}
+              <div className="flex-1">
+                <input 
+                  type="file" 
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onloadend = () => {
+                        setFormData({ ...formData, photo_url: reader.result as string });
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                  className="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-600 hover:file:bg-indigo-100"
+                />
+              </div>
+            </div>
+          </div>
 
           <Input label="Keterangan / Notes" value={formData.notes || ''} onChange={e => setFormData({ ...formData, notes: e.target.value })} placeholder="Keterangan tambahan..." />
 
