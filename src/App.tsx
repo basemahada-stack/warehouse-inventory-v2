@@ -17,9 +17,10 @@ import {
   PicsPage, 
   VendorsPage, 
   InStockReasonsPage, 
-  OutStockReasonsPage 
 } from './pages/settings/BasicSettings';
 import FinanceRecapPage from './pages/FinanceRecapPage';
+import JadwalOpnamePage from './pages/stock-opname/JadwalOpnamePage';
+import ProgresOpnamePage from './pages/stock-opname/ProgresOpnamePage';
 
 function SessionRedirector({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
@@ -56,6 +57,8 @@ export default function App() {
           <Route path="in-stock" element={<InStockPage />} />
           <Route path="out-stock" element={<OutStockPage />} />
           <Route path="vendor-stock" element={<VendorStockPage />} />
+          <Route path="opname/jadwal" element={<JadwalOpnamePage />} />
+          <Route path="opname/progres" element={<ProgresOpnamePage />} />
           <Route path="finance-recap" element={<FinanceRecapPage />} />
           
           <Route path="settings" element={<SettingsLayout />}>

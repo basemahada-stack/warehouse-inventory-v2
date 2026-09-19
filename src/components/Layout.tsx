@@ -14,7 +14,8 @@ import {
   ChevronUp,
   Calculator,
   Download,
-  RefreshCw
+  RefreshCw,
+  ClipboardCheck
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { cn } from '../lib/utils';
@@ -48,6 +49,15 @@ const sidebarMenus = [
     ]
   },
   { path: '/vendor-stock', icon: Warehouse, label: 'Vendor Stock' },
+  { 
+    path: '/opname', 
+    icon: ClipboardCheck, 
+    label: 'Stock Opname',
+    subMenus: [
+      { path: '/opname/jadwal', label: 'Jadwal Stock Opname' },
+      { path: '/opname/progres', label: 'Progres Stock Opname' }
+    ]
+  },
   { path: '/finance-recap', icon: Calculator, label: 'Rekap Finance' },
   { path: '/settings', icon: Settings, label: 'Pengaturan' },
 ];
@@ -105,7 +115,8 @@ export default function Layout() {
   const [isStandalone, setIsStandalone] = useState(false);
   const [expandedMenu, setExpandedMenu] = useState<string | null>(
     location.pathname.startsWith('/inventory') ? '/inventory' : 
-    location.pathname.startsWith('/deadstock') ? '/deadstock' : null
+    location.pathname.startsWith('/deadstock') ? '/deadstock' : 
+    location.pathname.startsWith('/opname') ? '/opname' : null
   );
 
   useEffect(() => {

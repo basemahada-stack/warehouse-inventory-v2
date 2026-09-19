@@ -58,5 +58,14 @@ export const mockDashboardStats = {
   outOfStock: 2,
   totalIn: 4500,
   totalOut: 1200,
-  activeVendors: 8
 };
+
+export const mockOpnameSchedules = [
+  { id: 'os1', product_id: 'prod1', frequency: 'Harian', schedule_time: 'Setiap Hari, 16:00', created_at: new Date().toISOString(), product: { product_name: 'Kertas HVS A4 80gr', product_code: 'ATK-001' } },
+  { id: 'os2', product_id: 'prod2', frequency: 'Bulanan', schedule_time: 'Tanggal 1', created_at: new Date().toISOString(), product: { product_name: 'Mouse Wireless Logitech', product_code: 'ELK-001' } },
+];
+
+export const mockOpnameProgress = [
+  { id: 'op1', schedule_id: 'os1', product_id: 'prod1', pic_id: 'p1', realization_date: new Date().toISOString(), status: '✅ Selesai', notes: 'Sesuai dengan fisik', created_at: new Date().toISOString(), product: { product_name: 'Kertas HVS A4 80gr', product_code: 'ATK-001' }, schedule: { frequency: 'Harian', schedule_time: 'Setiap Hari, 16:00' }, pic: { name: 'Andi Saputra' } },
+  { id: 'op2', schedule_id: 'os2', product_id: 'prod2', pic_id: null, realization_date: null, status: '⏳ Belum', notes: '', created_at: new Date().toISOString(), product: { product_name: 'Mouse Wireless Logitech', product_code: 'ELK-001' }, schedule: { frequency: 'Bulanan', schedule_time: 'Tanggal 1' }, pic: null },
+];
