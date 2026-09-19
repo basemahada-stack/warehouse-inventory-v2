@@ -548,10 +548,16 @@ export default function InventoryPage({ type = 'stock' }: { type?: 'stock' | 'wa
 
             {activeTab === 'summary' && (
               <div className="space-y-4">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-12 h-12 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
-                    <Box className="w-6 h-6" />
-                  </div>
+                <div className="flex items-center gap-4 mb-6">
+                  {selectedProduct.photo_url ? (
+                    <div className="w-16 h-16 rounded-lg overflow-hidden shrink-0 border border-slate-200 bg-slate-50">
+                      <img src={selectedProduct.photo_url} alt={selectedProduct.product_name} className="w-full h-full object-cover" />
+                    </div>
+                  ) : (
+                    <div className="w-12 h-12 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
+                      <Box className="w-6 h-6" />
+                    </div>
+                  )}
                   <div>
                     <h2 className="text-xl font-bold text-slate-900">{selectedProduct.product_name}</h2>
                     <p className="text-slate-500 text-sm font-mono">{selectedProduct.product_code} • {selectedProduct.category?.name}</p>
