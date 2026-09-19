@@ -17,6 +17,7 @@ import {
   PicsPage, 
   VendorsPage, 
   InStockReasonsPage, 
+  OutStockReasonsPage
 } from './pages/settings/BasicSettings';
 import FinanceRecapPage from './pages/FinanceRecapPage';
 import JadwalOpnamePage from './pages/stock-opname/JadwalOpnamePage';
