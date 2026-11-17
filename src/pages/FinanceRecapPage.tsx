@@ -246,7 +246,7 @@ export default function FinanceRecapPage() {
                     </td>
                     <td className="px-4 py-3">{format(new Date(item.transaction_date), 'dd MMM yyyy')}</td>
                     <td className="px-4 py-3 font-medium text-slate-900">{item.product?.product_name || '-'}</td>
-                    <td className="px-4 py-3 text-right font-bold text-red-500">-{item.quantity}</td>
+                    <td className="px-4 py-3 text-right font-bold text-red-500">-{Number(item.quantity).toLocaleString('id-ID', { maximumFractionDigits: 2 })}</td>
                     <td className="px-4 py-3 text-right">Rp {(item.unit_cost || 0).toLocaleString('id-ID')}</td>
                     <td className="px-4 py-3 text-right font-bold text-slate-900">Rp {(item.total_cost || 0).toLocaleString('id-ID')}</td>
                     <td className="px-4 py-3">

@@ -353,7 +353,7 @@ export default function OutDeadstockPage() {
                     <td className="px-4 py-3 font-medium text-slate-900">{item.product?.product_name || '-'}</td>
                     <td className="px-4 py-3 font-mono text-slate-500">{item.deadstock_in?.transaction_number || '-'}</td>
                     <td className="px-4 py-3">{item.product?.unit?.name || '-'}</td>
-                    <td className="px-4 py-3 text-right font-bold text-red-500">-{item.quantity}</td>
+                    <td className="px-4 py-3 text-right font-bold text-red-500">-{Number(item.quantity).toLocaleString('id-ID', { maximumFractionDigits: 2 })}</td>
                     <td className="px-4 py-3 text-right">Rp {(item.total_cost || 0).toLocaleString('id-ID')}</td>
                     <td className="px-4 py-3 text-right">Rp {(item.unit_cost || 0).toLocaleString('id-ID')}</td>
                     <td className="px-4 py-3">{item.destination || '-'}</td>
@@ -407,13 +407,13 @@ export default function OutDeadstockPage() {
               <option value="">Pilih Batch Sumber</option>
               {availableBatches.map(b => (
                 <option key={b.id} value={b.id}>
-                  {b.transaction_number} - {format(new Date(b.transaction_date), 'dd/MM/yy')} (Sisa: {b.remaining_qty})
+                  {b.transaction_number} - {format(new Date(b.transaction_date), 'dd/MM/yy')} (Sisa: {Number(b.remaining_qty).toLocaleString('id-ID', { maximumFractionDigits: 2 })})
                 </option>
               ))}
             </Select>
           )}
 
-          <Input type="number" label="Quantity" min="1" required value={formData.quantity || ''} onChange={e => setFormData({ ...formData, quantity: parseInt(e.target.value) || 0 })} />
+          <Input type="number" label="Quantity" min="0.01" step="any" required value={formData.quantity || ''} onChange={e => setFormData({ ...formData, quantity: parseFloat(e.target.value) || 0 })} />
 
           {formData.deadstock_in_id && formData.quantity > 0 && (
             <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 flex justify-between items-center">
@@ -475,7 +475,7 @@ export default function OutDeadstockPage() {
             </div>
             <div className="grid grid-cols-3 gap-2 border-b border-slate-100 pb-2">
               <span className="text-slate-500">Quantity</span>
-              <span className="col-span-2 font-bold text-red-600">-{viewData.quantity} {viewData.product?.unit?.name || ''}</span>
+              <span className="col-span-2 font-bold text-red-600">-{Number(viewData.quantity).toLocaleString('id-ID', { maximumFractionDigits: 2 })} {viewData.product?.unit?.name || ''}</span>
             </div>
             <div className="grid grid-cols-3 gap-2 border-b border-slate-100 pb-2">
               <span className="text-slate-500">Total Cost</span>

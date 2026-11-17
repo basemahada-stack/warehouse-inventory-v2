@@ -17,3 +17,10 @@ ALTER TABLE stock_out ADD COLUMN IF NOT EXISTS is_checked_finance BOOLEAN DEFAUL
 
 -- 5. Add finance check column to deadstock_out
 ALTER TABLE deadstock_out ADD COLUMN IF NOT EXISTS is_checked_finance BOOLEAN DEFAULT FALSE;
+
+-- 6. Change quantity columns from INTEGER to NUMERIC to support decimal values (e.g., 1.5 meter)
+ALTER TABLE stock_in ALTER COLUMN quantity TYPE NUMERIC(15, 2);
+ALTER TABLE stock_out ALTER COLUMN quantity TYPE NUMERIC(15, 2);
+ALTER TABLE deadstock_in ALTER COLUMN quantity TYPE NUMERIC(15, 2);
+ALTER TABLE deadstock_out ALTER COLUMN quantity TYPE NUMERIC(15, 2);
+ALTER TABLE products ALTER COLUMN minimum_stock TYPE NUMERIC(15, 2);

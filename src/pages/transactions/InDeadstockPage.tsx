@@ -337,7 +337,7 @@ export default function InDeadstockPage() {
                     <td className="px-4 py-3">{item.vendor?.name || '-'}</td>
                     <td className="px-4 py-3 font-medium text-slate-900">{item.product?.product_name || '-'}</td>
                     <td className="px-4 py-3">{item.product?.unit?.name || '-'}</td>
-                    <td className="px-4 py-3 text-right font-bold text-emerald-600">+{item.quantity}</td>
+                    <td className="px-4 py-3 text-right font-bold text-emerald-600">+{Number(item.quantity).toLocaleString('id-ID', { maximumFractionDigits: 2 })}</td>
                     <td className="px-4 py-3 text-right">Rp {(item.total_cost || 0).toLocaleString('id-ID')}</td>
                     <td className="px-4 py-3 text-right">Rp {(item.unit_cost || 0).toLocaleString('id-ID')}</td>
                     <td className="px-4 py-3">{item.pic?.name || '-'}</td>
@@ -393,7 +393,7 @@ export default function InDeadstockPage() {
           </Select>
 
           <div className="grid grid-cols-2 gap-4">
-            <Input type="number" label="Quantity" required min="1" value={formData.quantity || ''} onChange={e => setFormData({ ...formData, quantity: parseInt(e.target.value) || 0 })} />
+            <Input type="number" label="Quantity" required min="0.01" step="any" value={formData.quantity || ''} onChange={e => setFormData({ ...formData, quantity: parseFloat(e.target.value) || 0 })} />
             <Input type="number" label="Total Cost (Rp)" value={formData.total_cost || ''} onChange={e => setFormData({ ...formData, total_cost: parseFloat(e.target.value) || 0 })} />
           </div>
           
@@ -476,7 +476,7 @@ export default function InDeadstockPage() {
             </div>
             <div className="grid grid-cols-3 gap-2 border-b border-slate-100 pb-2">
               <span className="text-slate-500">Quantity</span>
-              <span className="col-span-2 font-bold text-emerald-600">+{viewData.quantity} {viewData.product?.unit?.name || ''}</span>
+              <span className="col-span-2 font-bold text-emerald-600">+{Number(viewData.quantity).toLocaleString('id-ID', { maximumFractionDigits: 2 })} {viewData.product?.unit?.name || ''}</span>
             </div>
             <div className="grid grid-cols-3 gap-2 border-b border-slate-100 pb-2">
               <span className="text-slate-500">Total Cost</span>

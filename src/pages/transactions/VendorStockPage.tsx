@@ -200,10 +200,10 @@ export default function VendorStockPage() {
                       {item.product?.product_name || '-'}
                     </td>
                     <td className="px-5 py-3 text-right text-slate-500">
-                      {item.quantity} {item.product?.unit?.name}
+                      {Number(item.quantity).toLocaleString('id-ID', { maximumFractionDigits: 2 })} {item.product?.unit?.name}
                     </td>
                     <td className="px-5 py-3 text-right font-bold text-slate-900">
-                      {item.remaining_quantity} {item.product?.unit?.name}
+                      {Number(item.remaining_quantity).toLocaleString('id-ID', { maximumFractionDigits: 2 })} {item.product?.unit?.name}
                     </td>
                     <td className="px-5 py-3 text-center">
                       {item.status === 'Tersedia' ? (

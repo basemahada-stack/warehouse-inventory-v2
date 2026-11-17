@@ -453,7 +453,7 @@ export default function Dashboard() {
                     </div>
                     <div className="text-right pl-3">
                       <div className="text-sm font-bold text-slate-900">
-                        {act.type === 'OUT' ? '-' : '+'}{act.qty}
+                        {act.type === 'OUT' ? '-' : '+'}{Number(act.qty).toLocaleString('id-ID', { maximumFractionDigits: 2 })}
                       </div>
                       <span className={`inline-block mt-1 px-1.5 py-0.5 rounded text-[10px] font-bold ${act.badgeColor}`}>
                         {act.type}
